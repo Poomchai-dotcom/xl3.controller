@@ -1,0 +1,1340 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A6BB5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B121C" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="XL3 Trio">
+<meta name="description" content="Control three NTi XL3 acoustic analyzers together: connect, live SPL/RTA, synchronized runs, result folders.">
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>XL3 Trio Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ---------- tokens · NTi-inspired: white ground, deep-navy ink, one signal-blue accent ---------- */
+:root{
+  --bg:#F5F7FA; --surface:#FFFFFF; --surface2:#F3F5F8; --surface3:#E9EDF2;
+  --border:#E4E8EE; --border-strong:#CBD3DC;
+  --text:#101828; --muted:#5F6B7A; --faint:#98A2B3;
+  --accent:#0A6BB5; --accent-ink:#FFFFFF; --accent-soft:rgba(10,107,181,.10);
+  --d1:#0A6BB5; --d2:#0E8C7A; --d3:#C77A12;
+  --d1-soft:rgba(10,107,181,.10); --d2-soft:rgba(14,140,122,.10); --d3-soft:rgba(199,122,18,.10);
+  --ok:#1A8A5A; --warn:#B7860B; --err:#C93B3B;
+  --ok-soft:rgba(26,138,90,.12); --warn-soft:rgba(183,134,11,.12); --err-soft:rgba(201,59,59,.12);
+  --z-line:#7B8794; --grid:#EDF0F4;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.06);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"IBM Plex Sans Thai","IBM Plex Sans",-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B121C; --surface:#111927; --surface2:#162030; --surface3:#1D293B;
+    --border:#1E2A3B; --border-strong:#2C3A4E;
+    --text:#E6EBF2; --muted:#9AA6B6; --faint:#66738A;
+    --accent:#2E8BD6; --accent-ink:#FFFFFF; --accent-soft:rgba(46,139,214,.16);
+    --d1:#2E8BD6; --d2:#17A187; --d3:#C97C1C;
+    --d1-soft:rgba(46,139,214,.16); --d2-soft:rgba(23,161,135,.16); --d3-soft:rgba(201,124,28,.16);
+    --ok:#3DBE82; --warn:#E3B23C; --err:#E25C5C;
+    --ok-soft:rgba(61,190,130,.16); --warn-soft:rgba(227,178,60,.16); --err-soft:rgba(226,92,92,.16);
+    --z-line:#AEB9C8; --grid:#1A2434;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0B121C; --surface:#111927; --surface2:#162030; --surface3:#1D293B;
+  --border:#1E2A3B; --border-strong:#2C3A4E;
+  --text:#E6EBF2; --muted:#9AA6B6; --faint:#66738A;
+  --accent:#2E8BD6; --accent-ink:#FFFFFF; --accent-soft:rgba(46,139,214,.16);
+  --d1:#2E8BD6; --d2:#17A187; --d3:#C97C1C;
+  --d1-soft:rgba(46,139,214,.16); --d2-soft:rgba(23,161,135,.16); --d3-soft:rgba(201,124,28,.16);
+  --ok:#3DBE82; --warn:#E3B23C; --err:#E25C5C;
+  --ok-soft:rgba(61,190,130,.16); --warn-soft:rgba(227,178,60,.16); --err-soft:rgba(226,92,92,.16);
+  --z-line:#AEB9C8; --grid:#1A2434;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- app frame ---------- */
+.app{display:grid;grid-template-columns:208px minmax(0,1fr);grid-template-rows:56px 1fr auto;height:100vh;min-height:600px}
+.topbar{grid-column:1/-1;display:flex;align-items:center;gap:18px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;min-width:188px}
+.brand-mark{width:28px;height:28px;border-radius:4px;background:var(--accent);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:11px;letter-spacing:.02em}
+.brand-name{font-weight:600;letter-spacing:-.01em;font-size:14px}
+.brand-sub{font-size:10.5px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
+.chips{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);white-space:nowrap;font-size:12px}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.chip[data-status="connected"] .dot{background:var(--ok)}
+.chip[data-status="connecting"] .dot{background:var(--warn);animation:pulse 1s infinite}
+.chip[data-status="error"] .dot{background:var(--err)}
+.chip .tag{font-family:var(--mono);font-weight:600;font-size:11px;padding:1px 6px;border-radius:3px;color:#fff}
+.chip .lvl{font-family:var(--mono);font-weight:400;color:var(--muted);font-size:11.5px}
+.chip .lvl b{color:var(--text);font-weight:600}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;padding:5px 10px;font-size:12px;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.seg.small button{padding:3px 8px;font-size:11px}
+
+.nav{background:var(--surface);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:2px}
+.nav button{display:grid;grid-template-columns:18px 1fr;align-items:center;gap:10px;text-align:left;border:0;background:transparent;padding:9px 10px;border-radius:6px;color:var(--muted);position:relative}
+.nav button:hover{background:var(--surface2);color:var(--text)}
+.nav button[aria-current="page"]{background:var(--accent-soft);color:var(--text)}
+.nav .step{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--faint)}
+.nav button[aria-current="page"] .step{color:var(--accent);font-weight:600}
+.nav .lbl{font-weight:600;font-size:13px}
+.nav .sub{display:block;font-weight:400;font-size:11px;color:var(--faint);margin-top:1px}
+.nav-foot{margin-top:auto;font-size:11px;color:var(--faint);padding:8px 10px;line-height:1.5}
+.nav-foot b{color:var(--muted);font-weight:500}
+
+.main{overflow:auto;padding:24px 28px 32px;min-width:0}
+.page{display:none;max-width:1240px;margin:0 auto}
+.page.active{display:block}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.page-head h1{font-size:19px;margin:0;letter-spacing:-.01em;text-wrap:balance;font-weight:600}
+.page-head p{margin:4px 0 0;color:var(--muted);max-width:70ch;font-size:12.5px}
+.page-head .actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* ---------- primitives ---------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.card.pad{padding:16px}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px 0}
+.card-h h2{margin:0;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.card-b{padding:14px 16px 16px}
+.eyebrow{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;color:var(--muted)}
+.field input,.field select{border:1px solid var(--border-strong);border-radius:6px;padding:8px 10px;background:var(--surface);width:100%;min-width:0}
+.field input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.field input.mono{font-family:var(--mono)}
+.field .hint{font-size:11px;color:var(--faint)}
+.btn{border:1px solid var(--border-strong);background:var(--surface);border-radius:6px;padding:8px 14px;font-weight:600;font-size:13px;display:inline-flex;align-items:center;gap:7px;line-height:1.2;color:var(--text)}
+.btn:hover{background:var(--surface2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary,.btn.accent{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover,.btn.accent:hover{filter:brightness(1.08)}
+.btn.danger{background:transparent;color:var(--err);border-color:var(--err)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--surface2);color:var(--text)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;background:var(--surface3);color:var(--muted)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.err{background:var(--err-soft);color:var(--err)}
+.pill.run{background:var(--accent);color:var(--accent-ink)}
+.pill .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.dev-tag{font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 7px;border-radius:3px;color:#fff;letter-spacing:.02em}
+[data-dev="1"] .dev-tag,.dev-tag[data-dev="1"],.chip[data-dev="1"] .tag{background:var(--d1)}
+[data-dev="2"] .dev-tag,.dev-tag[data-dev="2"],.chip[data-dev="2"] .tag{background:var(--d2)}
+[data-dev="3"] .dev-tag,.dev-tag[data-dev="3"],.chip[data-dev="3"] .tag{background:var(--d3)}
+[data-dev="1"]{--dev:var(--d1);--dev-soft:var(--d1-soft)}
+[data-dev="2"]{--dev:var(--d2);--dev-soft:var(--d2-soft)}
+[data-dev="3"]{--dev:var(--d3);--dev-soft:var(--d3-soft)}
+.note{border-left:2px solid var(--accent);padding:6px 12px;color:var(--muted);font-size:12px;line-height:1.55}
+.note.warn{border-left-color:var(--warn)}
+.note b{color:var(--text);font-weight:600}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:12px}
+.kv dt{color:var(--faint)}
+.kv dd{margin:0;font-family:var(--mono);color:var(--text)}
+table.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border)}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.r,.tbl th.r{text-align:right}
+.scroll-x{overflow-x:auto}
+
+/* ---------- page 1: connect ---------- */
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:1100px){.grid3{grid-template-columns:1fr}}
+.dev-card{position:relative;overflow:hidden}
+.dev-card .card-h{padding:14px 16px 0}
+.dev-card .card-b{display:flex;flex-direction:column;gap:12px}
+.idn{border-top:1px solid var(--border);padding:12px 0 0;font-size:12px;color:var(--muted)}
+.idn.live{color:var(--text)}
+.folder-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:end}
+@media (max-width:800px){.folder-row{grid-template-columns:1fr!important}}
+
+/* ---------- page 2: live ---------- */
+.live-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.live-grid{display:grid;gap:16px;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr))}
+@media (max-width:1100px){.live-grid{grid-template-columns:1fr}}
+.live-dev{display:flex;flex-direction:column;gap:10px;min-width:0}
+.live-dev .hdr{display:flex;align-items:center;gap:10px;padding:0 2px}
+.live-dev .hdr .serial{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.tile{background:var(--surface);padding:12px 14px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile+.tile{border-left:1px solid var(--border)}
+.tile .k{font-size:11px;letter-spacing:.05em;color:var(--muted);font-weight:600;display:flex;justify-content:space-between}
+.tile .k span:last-child{font-weight:400;color:var(--faint)}
+.tile .v{font-family:var(--mono);font-size:30px;font-weight:500;letter-spacing:-.02em;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile .v small{font-size:11px;color:var(--muted);font-weight:500;margin-left:3px;letter-spacing:0}
+.tile.a .v{color:var(--dev)}
+.tile.over .k span:first-child{color:var(--err)}
+.chart{background:var(--surface);border:1px solid var(--border);border-radius:8px;position:relative;min-width:0;overflow:hidden}
+.chart .ch{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 0;font-size:12px}
+.chart .ch .t{font-weight:600}
+.chart .ch .t small{color:var(--faint);font-weight:400;margin-left:6px}
+.chart canvas{display:block;width:100%;height:170px}
+.chart.tall canvas{height:150px}
+.legend{display:flex;gap:12px;font-size:11px;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px solid var(--dev);vertical-align:middle;margin-right:5px}
+.legend i.z{border-top-style:dashed;border-top-color:var(--z-line)}
+.tip{position:absolute;pointer-events:none;background:var(--text);color:var(--bg);font-family:var(--mono);font-size:11px;padding:4px 7px;border-radius:4px;transform:translate(-50%,-120%);white-space:nowrap;display:none;z-index:2}
+.disconnected{border:1px dashed var(--border-strong);border-radius:8px;padding:26px 16px;text-align:center;color:var(--muted);background:transparent}
+
+/* ---------- page 3: execute ---------- */
+.exec-grid{display:grid;grid-template-columns:380px 1fr;gap:16px;align-items:start}
+@media (max-width:1000px){.exec-grid{grid-template-columns:1fr}}
+.time-in{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.time-in input{text-align:center;font-family:var(--mono)}
+.big-cta{display:flex;gap:8px;margin-top:6px}
+.big-cta .btn{flex:1;justify-content:center;padding:11px}
+.status-list{display:flex;flex-direction:column;gap:10px}
+.st-row{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:12px 16px;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+.st-row .mid{min-width:0}
+.st-row .mid .line1{display:flex;gap:8px;align-items:center;font-size:12.5px;flex-wrap:wrap}
+.st-row .mid .serial{font-family:var(--mono);color:var(--muted);font-size:12px}
+.bar{height:4px;border-radius:2px;background:var(--surface3);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--dev);width:0%;transition:width .5s linear}
+.bar.escape i{background:var(--warn)}
+.clock{font-family:var(--mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em;text-align:right;min-width:88px}
+.clock small{display:block;font-size:10px;font-weight:600;color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
+.seq{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:12px;border-top:1px solid var(--border);font-size:11.5px}
+.seq div{padding:8px 10px 0;color:var(--faint)}
+.seq div b{display:block;color:var(--muted);font-family:var(--mono);font-size:10.5px;margin-top:2px;font-weight:400}
+.seq div.on{color:var(--text);box-shadow:inset 0 2px 0 var(--dev)}
+.seq div.on b{color:var(--text)}
+.master-clock{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);margin-bottom:12px}
+.master-clock .now{font-family:var(--mono);font-size:13px;color:var(--muted)}
+
+/* ---------- page 4: storage ---------- */
+.stor-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:1100px){.stor-grid{grid-template-columns:1fr}}
+.tree{font-family:var(--mono);font-size:12px;display:flex;flex-direction:column;gap:2px}
+.tree .node{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px}
+.tree .node.folder{cursor:pointer;font-weight:600}
+.tree .node.folder:hover{background:var(--surface2)}
+.tree .node.file{padding-left:30px;color:var(--muted);cursor:pointer}
+.tree .node.file:hover{background:var(--surface2);color:var(--text)}
+.tree .node.file .sz{margin-left:auto;color:var(--faint);font-size:11px}
+.tree .node .chev{width:12px;color:var(--faint);transition:transform .15s}
+.tree .node.open .chev{transform:rotate(90deg)}
+.tree .empty{padding:8px 30px;color:var(--faint);font-family:var(--sans);font-size:12px}
+.svg-ico{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- console drawer ---------- */
+.drawer{grid-column:1/-1;border-top:1px solid var(--border);background:var(--surface)}
+.drawer-h{display:flex;align-items:center;gap:12px;padding:6px 16px;font-size:12px;color:var(--muted)}
+.drawer-h .cnt{font-family:var(--mono);background:var(--surface3);padding:1px 6px;border-radius:4px}
+.drawer-h .sp{flex:1}
+.drawer-b{height:0;overflow:auto;transition:height .2s;font-family:var(--mono);font-size:11.5px;background:var(--surface2)}
+.drawer.open .drawer-b{height:180px}
+.log-line{display:grid;grid-template-columns:70px 44px 14px 1fr;gap:8px;padding:2px 16px;white-space:pre-wrap;word-break:break-all}
+.log-line .t{color:var(--faint)}
+.log-line .d{font-weight:600;color:var(--dev)}
+.log-line .dir{color:var(--faint)}
+.log-line.rx .msg{color:var(--muted)}
+.log-line.err .msg{color:var(--err)}
+.log-line.sys .msg{color:var(--accent)}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(10,18,30,.5);display:none;place-items:center;z-index:20;padding:20px}
+.modal.open{display:grid}
+.modal .box{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:min(820px,100%);max-height:85vh;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.modal .box .card-h{flex:none;padding:12px 16px;border-bottom:1px solid var(--border)}
+.modal .box .card-h h2{text-transform:none;letter-spacing:0;font-size:12.5px;color:var(--text)}
+.modal pre{margin:0;padding:14px 16px;overflow:auto;font-family:var(--mono);font-size:11.5px;line-height:1.5;color:var(--text);background:var(--surface2);flex:1;border-radius:0 0 10px 10px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 14px;border-radius:6px;font-size:12.5px;font-weight:500;box-shadow:var(--shadow);opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- tablet / phone ---------- */
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr auto;height:auto;min-height:100vh}
+  .topbar{flex-wrap:wrap;height:auto;padding:8px 12px;gap:8px 10px}
+  .brand{min-width:0}
+  .brand-sub{display:none}
+  .chips{order:3;flex-basis:100%}
+  .topbar-right{margin-left:auto}
+  .nav{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--border);padding:8px;gap:6px;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  .nav button{grid-template-columns:18px 1fr;min-width:140px;padding:8px 10px;flex:none}
+  .nav .sub{display:none}
+  .nav-foot{display:none}
+  .main{padding:14px 12px 22px;overflow:visible}
+  .page-head h1{font-size:17px}
+  .tile .v{font-size:22px}
+  .chart canvas{height:150px}
+  .st-row{grid-template-columns:auto 1fr;}
+  .st-row .clock{grid-column:1/-1;text-align:left;display:flex;gap:8px;align-items:baseline}
+  .seq{grid-template-columns:repeat(4,1fr)}
+  .seq div b{display:none}
+  .big-cta{flex-direction:column}
+  .drawer.open .drawer-b{height:140px}
+  .log-line{grid-template-columns:56px 40px 10px 1fr;gap:6px}
+}
+@media (max-width:420px){
+  .live-toolbar .seg button{padding:5px 8px;font-size:11px}
+}
+</style>
+
+<div class="app">
+  <!-- ============ top bar ============ -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">XL3</div>
+      <div>
+        <div class="brand-name">XL3 Trio Console</div>
+        <div class="brand-sub"><span data-i18n="tagline">3 × NTi XL3 · electrical equipment noise</span> · <span id="appVer2"></span></div>
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="topbar-right">
+      <div class="seg small" id="modeSeg" title="Adapter">
+        <button aria-pressed="true" data-mode="sim">Simulation</button>
+        <button aria-pressed="false" data-mode="real">NTi Connect</button>
+      </div>
+      <div class="seg small" id="langSeg">
+        <button aria-pressed="true" data-lang="th">ไทย</button>
+        <button aria-pressed="false" data-lang="en">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ nav ============ -->
+  <nav class="nav" id="nav">
+    <button data-page="connect" aria-current="page"><span class="step">1</span><span class="lbl" data-i18n="nav1">เชื่อมต่อ<span class="sub" data-i18n="nav1s">Connect key · โฟลเดอร์</span></span></button>
+    <button data-page="live"><span class="step">2</span><span class="lbl" data-i18n="nav2">Live<span class="sub" data-i18n="nav2s">SPL · RTA · Time history</span></span></button>
+    <button data-page="exec"><span class="step">3</span><span class="lbl" data-i18n="nav3">Execute<span class="sub" data-i18n="nav3s">Start · Schedule</span></span></button>
+    <button data-page="storage"><span class="step">4</span><span class="lbl" data-i18n="nav4">Storage<span class="sub" data-i18n="nav4s">Projects folder</span></span></button>
+    <div class="nav-foot"><b>Control API</b> port 50300 · LF-terminated<br><b>NTi Connect</b> wss://connect.nti-audio.com/…<br><b id="appVer"></b></div>
+  </nav>
+
+  <!-- ============ main ============ -->
+  <main class="main">
+
+    <!-- ---------- PAGE 1: CONNECT ---------- -->
+    <section class="page active" id="page-connect">
+      <div class="page-head">
+        <div>
+          <h1 data-i18n="p1h">1 · เชื่อมต่อเครื่องวัด XL3 ทั้ง 3 เครื่อง</h1>
+          <p data-i18n="p1p">กรอก Connect Key และ Password ของแต่ละเครื่อง แล้วกดเชื่อมต่อ โปรแกรมจะส่ง *IDN? เพื่ออ่าน Serial number และเฟิร์มแวร์</p>
+        </div>
+        <div class="actions">
+          <button class="btn" id="fillDemo" data-i18n="fillDemo">ใส่ค่าตัวอย่าง</button>
+          <button class="btn primary" id="connectAll" data-i18n="connectAll">เชื่อมต่อทั้ง 3 เครื่อง</button>
+        </div>
+      </div>
+      <div id="simNote" class="note" style="margin-bottom:14px"></div>
+      <div class="grid3" id="devCards"></div>
+
+      </section>
+
+    <!-- ---------- PAGE 2: LIVE ---------- -->
+    <section class="page" id="page-live">
+      <div class="page-head">
+        <div>
+          <h1 data-i18n="p2h">2 · ระดับเสียงแบบเรียลไทม์</h1>
+          <p data-i18n="p2p">แถวบน LAF / LZF · แถวกลาง RTA 1/3 octave (36 แบนด์ 6.3 Hz–20 kHz) · แถวล่าง Time history 120 วินาทีล่าสุด · อัปเดตทุก 500 ms</p>
+        </div>
+        <div class="live-toolbar">
+          <div class="seg" id="devSel">
+            <button aria-pressed="true" data-dev="all" data-i18n="allDev">ทั้ง 3 เครื่อง</button>
+            <button aria-pressed="false" data-dev="1">XL3-1</button>
+            <button aria-pressed="false" data-dev="2">XL3-2</button>
+            <button aria-pressed="false" data-dev="3">XL3-3</button>
+          </div>
+          <div class="seg" id="rtaW" title="RTA weighting"><button aria-pressed="true" data-w="A">RTA LAF</button><button aria-pressed="false" data-w="Z">RTA LZF</button></div>
+          <div class="seg" id="thW" title="Time history"><button aria-pressed="false" data-w="A">A</button><button aria-pressed="false" data-w="Z">Z</button><button aria-pressed="true" data-w="AZ">A + Z</button></div>
+          <div class="seg" id="thSpan" title="Time history range"><button aria-pressed="true" data-s="300">5 m</button><button aria-pressed="false" data-s="1800">30 m</button><button aria-pressed="false" data-s="7200">2 h</button><button aria-pressed="false" data-s="28800">8 h</button><button aria-pressed="false" data-s="86400">24 h</button></div>
+          <div class="seg" id="thScale" title="Y scale"><button aria-pressed="true" data-sc="auto">Auto</button><button aria-pressed="false" data-sc="30-90">30–90</button><button aria-pressed="false" data-sc="0-140">0–140</button></div>
+          <button class="btn sm" id="exportCsv" data-i18n="exportCsv">⬇ CSV</button>
+          <button class="btn sm" id="liveRunBtn" hidden></button>
+        </div>
+      </div>
+      <div class="live-grid" id="liveGrid"></div>
+    </section>
+
+    <!-- ---------- PAGE 3: EXECUTE ---------- -->
+    <section class="page" id="page-exec">
+      <div class="page-head">
+        <div>
+          <h1 data-i18n="p3h">3 · สั่งวัดพร้อมกัน 3 เครื่อง</h1>
+          <p data-i18n="p3p">โหมด Immediate: นับถอยหลัง escape time แล้วสั่ง INIT START ทั้ง 3 เครื่องในคำสั่งเดียว · โหมด Schedule: ตั้งเวลาเริ่ม โปรแกรมสั่งวัดและหยุด/บันทึกอัตโนมัติ</p>
+        </div>
+      </div>
+      <div class="exec-grid">
+        <div class="card">
+          <div class="card-h">
+            <h2 data-i18n="setupH">ตั้งค่าการวัด</h2>
+            <div class="seg small" id="execMode"><button aria-pressed="true" data-m="now">Immediate</button><button aria-pressed="false" data-m="sched">Schedule</button></div>
+          </div>
+          <div class="card-b" style="display:flex;flex-direction:column;gap:14px">
+            <div id="nowFields" style="display:flex;flex-direction:column;gap:14px">
+              <div class="field">
+                <label data-i18n="escLbl">Escape time — เวลาให้ผู้วัดเดินออกก่อนเริ่ม (วินาที)</label>
+                <input id="escSec" type="number" min="0" max="600" value="10" class="mono">
+              </div>
+            </div>
+            <div id="schedFields" style="display:none;flex-direction:column;gap:14px">
+              <div class="field">
+                <label data-i18n="startAt">เวลาเริ่มวัด (เวลาเครื่องนี้ · Asia/Bangkok)</label>
+                <input id="schedStart" type="datetime-local" class="mono">
+              </div>
+            </div>
+            <div class="field">
+              <label data-i18n="durLbl">ระยะเวลาวัด (ชม : นาที : วินาที) → MEAS:TIM:SET:SING</label>
+              <div class="time-in">
+                <input id="durH" type="number" min="0" max="99" value="0" aria-label="hours">
+                <input id="durM" type="number" min="0" max="59" value="1" aria-label="minutes">
+                <input id="durS" type="number" min="0" max="59" value="0" aria-label="seconds">
+              </div>
+              <div class="hint" id="durHint"></div>
+            </div>
+            <div class="field">
+              <label data-i18n="targetLbl">เครื่องที่จะสั่ง</label>
+              <div id="execTargets" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            </div>
+            <div class="big-cta">
+              <button class="btn primary" id="startAll" data-i18n="startAll">▶ เริ่มวัดทั้ง 3 เครื่อง</button>
+              <button class="btn danger" id="stopAll" data-i18n="stopAll" disabled>■ หยุดทั้งหมด</button>
+            </div>
+            <div class="note" id="execNote"></div>
+          </div>
+        </div>
+        <div>
+          <div class="master-clock" style="flex-wrap:wrap;gap:10px">
+            <div><div class="eyebrow" data-i18n="masterLbl">เวลาเครื่องควบคุม</div><div class="now" id="nowClock">—</div><div class="eyebrow" style="margin-top:8px" data-i18n="devClocks">นาฬิกาเครื่องวัด</div><div id="devClocks" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"></div></div>
+            <div style="text-align:right"><div class="eyebrow" id="phaseLbl">Idle</div><div class="clock" id="masterCount">--:--</div></div>
+          </div>
+          <div class="status-list" id="execStatus"></div>
+          <div class="card" id="syncPanel" style="margin-top:12px" hidden><div class="card-h"><h2 data-i18n="syncH">สถานะซิงก์กับเครื่อง</h2></div><div class="card-b" id="syncBody" style="font-size:12px"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- PAGE 4: STORAGE ---------- -->
+    <section class="page" id="page-storage">
+      <div class="page-head">
+        <div>
+          <h1 data-i18n="p4h">4 · ไฟล์ผลการวัดบนเครื่อง</h1>
+          <p data-i18n="p4p">กดปุ่มโฟลเดอร์เพื่อเปิด Projects/ ของแต่ละเครื่อง · คลิกไฟล์เพื่อดูตัวอย่างและคัดลอกข้อมูลไปวิเคราะห์ต่อ (Excel / Python)</p>
+        </div>
+        <div class="actions"><button class="btn" id="refreshStor" data-i18n="refresh">รีเฟรชรายการไฟล์</button></div>
+      </div>
+      <div class="stor-grid" id="storGrid"></div>
+    </section>
+  </main>
+
+  <!-- ============ command console ============ -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-h">
+      <button class="btn ghost sm" id="drawerToggle">▲ <span data-i18n="console">Command log</span></button>
+      <span class="cnt" id="logCount">0</span>
+      <span class="sp"></span>
+      <span id="adapterState" class="mono" style="font-size:11px"></span>
+      <button class="btn ghost sm" id="clearLog" data-i18n="clear">ล้าง</button>
+    </div>
+    <div class="drawer-b" id="logBody"></div>
+  </div>
+</div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="box">
+    <div class="card-h"><h2 id="modalTitle" class="mono">file</h2><div style="display:flex;gap:8px"><button class="btn sm" id="copyFile" data-i18n="copy">คัดลอก</button><button class="btn sm ghost" id="closeModal">✕</button></div></div>
+    <pre id="modalBody"></pre>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/* =====================================================================
+   XL3 Trio Console — application script
+   Architecture
+   ------------
+   UI  ──SCPI-style text commands──▶  Adapter  ──▶  XL3 device
+   The UI never talks to hardware directly. It only sends XL3 Control API
+   commands (e.g. "MEAS:SLM:123? LAF, LZF") to an *adapter* and parses the
+   text reply. Two adapters implement the same interface:
+     • XL3Sim     — a simulated XL3 (runs anywhere, incl. this hosted page)
+     • XL3Remote  — a real XL3 via NTi Connect WebSocket
+                    wss://connect.nti-audio.com/<ConnectKey>/api/control/
+   Swapping "Simulation" → "NTi Connect" in the top bar changes only the
+   adapter; every menu keeps working unchanged.
+   ===================================================================== */
+
+/* ---------------- i18n ---------------- */
+const I18N = {
+ th:{
+  tagline:'3 × NTi XL3 · วัดเสียงอุปกรณ์ไฟฟ้า',
+  nav1:'เชื่อมต่อ', nav1s:'Connect key · โฟลเดอร์', nav2:'Live', nav2s:'SPL · RTA · Time history',
+  nav3:'Execute', nav3s:'Start · Schedule', nav4:'Storage', nav4s:'Projects folder',
+  p1h:'1 · เชื่อมต่อเครื่องวัด XL3 ทั้ง 3 เครื่อง',
+  p1p:'กรอก Connect Key และ Password ของแต่ละเครื่อง แล้วกดเชื่อมต่อ (โปรแกรมอ่าน *IDN? และคอนฟิกเครื่อง) จากนั้นกำหนดโฟลเดอร์บน SD card ที่ให้เครื่องนั้นบันทึกผลวัดได้ทีละเครื่อง',
+  fillDemo:'ใส่ค่าตัวอย่าง', connectAll:'เชื่อมต่อทั้ง 3 เครื่อง',
+  saveLbl:'โฟลเดอร์บันทึกผลวัดบน SD card', apply:'ตั้งค่า', readConf:'อ่านค่า', confKey:'คีย์ในคอนฟิกเครื่อง', confUnknown:'ไม่พบคีย์โฟลเดอร์ในคอนฟิกเครื่อง — โปรแกรมจะสร้างโฟลเดอร์ให้ และเก็บคอนฟิกเต็มไว้ใน Command log', saveHint:'พาธเทียบกับราก SD card เช่น Projects/TR-SiteA · อนุญาต A–Z 0–9 - _ . /', folderSet:'ตั้งค่าโฟลเดอร์แล้ว', badPath:'พาธใช้ได้เฉพาะ A–Z a–z 0–9 - _ . /', current:'ปัจจุบัน',
+  p2h:'2 · ระดับเสียงแบบเรียลไทม์',
+  p2p:'แถวบน Overall SPL · แถวกลาง RTA 1/3 octave (36 แบนด์ 6.3 Hz–20 kHz) · แถวล่าง Time history เลือกช่วง 5 นาที–24 ชม. แกนเวลาเป็นนาฬิกาจริง ส่งออก CSV ได้ · อัปเดตทุก 500 ms',
+  allDev:'ทั้ง 3 เครื่อง',
+  p3h:'3 · สั่งวัดพร้อมกัน 3 เครื่อง',
+  p3p:'โหมด Immediate: นับถอยหลัง escape time แล้วสั่ง INIT START ทั้ง 3 เครื่องในคำสั่งเดียว · โหมด Schedule: ตั้งเวลาเริ่ม โปรแกรมสั่งวัดและหยุด/บันทึกอัตโนมัติ',
+  setupH:'ตั้งค่าการวัด', escLbl:'Escape time — เวลาให้ผู้วัดเดินออกก่อนเริ่ม (วินาที)',
+  startAt:'เวลาเริ่มวัด (เวลาเครื่องนี้ · Asia/Bangkok)',
+  durLbl:'ระยะเวลาวัด (ชม : นาที : วินาที) → MEAS:TIM:SET:SING', targetLbl:'เครื่องที่จะสั่ง',
+  startAll:'▶ เริ่มวัดทั้ง 3 เครื่อง', stopAll:'■ หยุดทั้งหมด', masterLbl:'เวลาเครื่องควบคุม',
+  p4h:'4 · ไฟล์ผลการวัดบนเครื่อง',
+  p4p:'กดปุ่มโฟลเดอร์เพื่อเปิด Projects/ ของแต่ละเครื่อง · คลิกไฟล์เพื่อดูตัวอย่างและคัดลอกข้อมูลไปวิเคราะห์ต่อ (Excel / Python)',
+  refresh:'รีเฟรชรายการไฟล์', console:'Command log', clear:'ล้าง', copy:'คัดลอก',
+  // dynamic
+  ckey:'Connect Key', pass:'Password', connect:'เชื่อมต่อ', disconnect:'ตัดการเชื่อมต่อ', connecting:'กำลังเชื่อมต่อ…',
+  idle:'ยังไม่เชื่อมต่อ', connected:'เชื่อมต่อแล้ว', error:'ผิดพลาด', notConnected:'เครื่องนี้ยังไม่เชื่อมต่อ — ไปที่เมนู 1',
+  idnWait:'รอผล *IDN? หลังเชื่อมต่อ', serial:'Serial', fw:'Firmware', model:'รุ่น',
+  folderNone:'ยังไม่สร้าง', folderMade:'สร้างแล้ว', folderPending:'รอสร้าง',
+  simNote:'<b>โหมดจำลอง</b> — เครื่อง XL3 ทั้ง 3 เป็นโมเดลจำลอง (หม้อแปลง 50 Hz, มอเตอร์/พัดลม, จุดอ้างอิงพื้นหลัง) ทุกเมนูส่งคำสั่ง XL3 Control API จริงและอ่านคำตอบผ่าน Command log ด้านล่าง เมื่อพร้อมใช้กับเครื่องจริงให้สลับเป็น <b>NTi Connect</b>',
+  realNote:'<b>โหมด NTi Connect</b> — เชื่อมต่อผ่าน wss://connect.nti-audio.com/&lt;ConnectKey&gt;/api/control/ (เครื่อง XL3 ต้องออนไลน์และเปิด NTi Connect) <b>หมายเหตุ:</b> หน้าที่โฮสต์บน claude.ai ถูกบล็อกการเชื่อมต่อออกนอก จึงต้องดาวน์โหลดไฟล์ HTML นี้ไปเปิดบนคอมพิวเตอร์ของคุณเพื่อคุยกับเครื่องจริง',
+  needKey:'กรอก Connect Key และ Password ก่อน', badName:'ชื่อโฟลเดอร์ใช้ได้เฉพาะ A–Z a–z 0–9 - _ .', needConn:'ต้องเชื่อมต่ออย่างน้อย 1 เครื่องก่อน',
+  foldersDone:'สร้างโฟลเดอร์แล้ว', noFolder:'ยังไม่ได้ตั้งโฟลเดอร์ (เมนู 1)',
+  armed:'ตั้งเวลาแล้ว', escape:'Escape', running:'กำลังวัด', saved:'บันทึกแล้ว', stopped:'หยุดแล้ว', waiting:'รอเวลาเริ่ม',
+  toStart:'ถึงเวลาเริ่ม', remaining:'เหลือ', elapsed:'ผ่านไป',
+  execNoteNow:'ลำดับคำสั่งต่อเครื่อง: MEAS:TIM:MODE SING → MEAS:TIM:SET:SING &lt;ms&gt; → (escape) → INIT START + MEAS:INIT → ครบเวลา → INIT STOP → บันทึกไฟล์ลงโฟลเดอร์ที่ตั้งไว้ในเมนู 1',
+  execNoteSched:'โปรแกรมจะส่ง INIT START ให้ทุกเครื่องพร้อมกันเมื่อถึงเวลาที่ตั้ง แล้วส่ง INIT STOP เมื่อครบระยะเวลา — เปิดหน้านี้ทิ้งไว้จนจบการวัด',
+  schedPast:'เวลาเริ่มต้องอยู่ในอนาคต', started:'สั่งเริ่มวัดแล้ว', stoppedAll:'หยุดและบันทึกแล้ว',
+  openFolder:'เปิดโฟลเดอร์ Projects', noFiles:'ยังไม่มีไฟล์ — วัดในเมนู 3 ก่อน', copied:'คัดลอกแล้ว', copyFail:'คัดลอกไม่สำเร็จ',
+  files:'ไฟล์', seqArm:'ตั้งค่า', seqEsc:'Escape', seqRun:'วัด', seqSave:'บันทึก',
+  over:'OVER', wsFail:'เชื่อมต่อไม่สำเร็จ — ตรวจสอบ: (1) XL3 ออนไลน์และเปิด NTi Connect อยู่ (2) Connect Key ตรงกับที่แสดงบนหน้าจอเครื่อง (3) เครื่องมี API option ติดตั้งแล้ว',
+  wsHosted:'หน้านี้เปิดจาก claude.ai ซึ่งบล็อกการเชื่อมต่อออกไปยังเครื่องจริง — กดดาวน์โหลดไฟล์ HTML จากแชท แล้วดับเบิลคลิกเปิดบนคอมพิวเตอร์/มือถือของคุณ จากนั้นสลับเป็น NTi Connect อีกครั้ง',
+  wsTimeout:'เซิร์ฟเวอร์ NTi Connect ไม่ตอบภายใน 8 วินาที — เครื่อง XL3 อาจออฟไลน์ หรือยังไม่เปิด NTi Connect บนเครื่อง',
+  wsNoPrompt:'เชื่อมต่อได้แต่เครื่องไม่ส่ง Password: — ตรวจว่า XL3 มี API option (Control API) ติดตั้ง',
+  wsBadPass:'เครื่องถาม Password ซ้ำ — รหัสผ่านไม่ถูกต้อง',
+  wsClosed:'เซิร์ฟเวอร์ปิดการเชื่อมต่อ (code {code}) — Connect Key อาจไม่ถูกต้อง หรือเครื่องออฟไลน์', demoOnly:'ใช้ได้ในโหมดจำลอง',
+  openWeb:'เปิดโฟลเดอร์ผลวัดบนเครื่อง', openSftp:'SFTP', sftpTitle:'การเชื่อมต่อ SFTP ผ่าน NTi Connect', sftpNote:'ใช้กับ WinSCP / FileZilla / Cyberduck · ถ้าโปรแกรม SFTP บนเครื่องคุณลงทะเบียนลิงก์ sftp:// ไว้ ปุ่มจะเปิดให้ทันที ไม่เช่นนั้นให้คัดลอกค่าด้านล่างไปกรอกเอง · รูปแบบชื่อผู้ใช้/โฮสต์อ้างจากคู่มือ API (SSH พอร์ต 22) — ตรวจกับหน้าจอ System Settings → Connections บนเครื่อง XL3 อีกครั้ง', keyCopied:'เปิด NTi Connect ในแท็บใหม่แล้ว — ถ้าหน้าเว็บถาม Connect Key ให้กด Ctrl+V (คัดลอกไว้ให้แล้ว) แล้วใส่รหัสผ่านเครื่อง', realStor:'ไฟล์ผลวัดอยู่บน SD card ของเครื่องนี้ที่ <b>{path}</b> — กดปุ่มด้านบนเพื่อเปิดผ่านหน้าเว็บ NTi Connect (ดูหน้าจอเครื่อง + ดาวน์โหลดไฟล์) โดยไม่ต้องตั้งค่าอะไรเพิ่ม', exportCsv:'⬇ ส่งออก CSV', csvDone:'ส่งออก CSV แล้ว ({n} แถว)', csvNone:'ยังไม่มีข้อมูลให้ส่งออก', csvHosted:'หน้าที่โฮสต์บน claude.ai ดาวน์โหลดไฟล์ไม่ได้ — คัดลอกข้อความด้านล่างไปวางใน Excel แทน', downsampled:'ย่อข้อมูล: แถบ = ช่วง min–max ต่อพิกเซล', external:'สั่งจากอุปกรณ์อื่น / บนเครื่อง', syncH:'สถานะซิงก์กับเครื่อง', syncNoFile:'ไม่พบไฟล์สถานะ', syncFile:'ไฟล์สถานะ', syncAgo:'เมื่อ {s} s ก่อน', syncBy:'โดย', syncMe:'อุปกรณ์นี้', syncErr:'อ่านไม่ได้', syncNotConn:'มือถือ/คอมเครื่องนี้ยังไม่เชื่อมต่อกับ XL3 — ต้องกดเชื่อมต่อในเมนู 1 ก่อน จึงจะเห็นสถานะที่อุปกรณ์อื่นสั่ง', syncNote:'สถานะการวัดซิงก์ผ่านตัวเครื่อง XL3 — เปิดจากมือถือหรือคอมเครื่องใดก็เห็นเหมือนกัน (อ่าน RUNSTATUS + ไฟล์สถานะบน SD card ทุก 5 s)', devTime:'วัน-เวลาเครื่อง', clockSrc:'แหล่งนาฬิกา', battery:'แบตเตอรี่ / ไฟเลี้ยง', freeStor:'SD card ว่าง', options:'ออปชัน', runStatus:'สถานะเครื่อง', clockDiff:'เวลาเครื่องต่างจากคอม {s}', devClocks:'นาฬิกาเครื่องวัด (เทียบกับคอม)', liveStopped:'เครื่องอยู่ในสถานะหยุด — XL3 ส่งค่าสดผ่าน API เฉพาะขณะกำลังวัด กด ▶ ดูค่าสด หรือกด Start บนเครื่อง', liveBtn:'▶ ดูค่าสด (INIT START)', liveStopBtn:'■ หยุดดูค่าสด (INIT STOP)', liveBtnHint:'สั่งเครื่องวัดแบบต่อเนื่องเพื่อแสดงค่าสด — เครื่องอาจบันทึกไฟล์ตามค่า autosave/logging ของเครื่องเอง', liveUndef:'เครื่องยังไม่ส่งค่า — ดู Command log', logCleared:'ล้าง log แล้ว', mkFolderSim:'สร้างโฟลเดอร์ (จำลอง)', bands:'แบนด์',
+ },
+ en:{
+  tagline:'3 × NTi XL3 · electrical equipment noise',
+  nav1:'Connect', nav1s:'Connect key · folders', nav2:'Live', nav2s:'SPL · RTA · Time history',
+  nav3:'Execute', nav3s:'Start · Schedule', nav4:'Storage', nav4s:'Projects folder',
+  p1h:'1 · Connect the three XL3 analyzers',
+  p1p:'Enter each unit\'s Connect Key and password, then connect (the console reads *IDN? and the unit config). Then set, per unit, the SD-card folder where that unit saves its results.',
+  fillDemo:'Fill example values', connectAll:'Connect all 3',
+  saveLbl:'Result folder on the SD card', apply:'Apply', readConf:'Read', confKey:'Key in unit config', confUnknown:'No folder key found in the unit config — the folder will be created and the full config kept in the command log', saveHint:'Path relative to the SD root, e.g. Projects/TR-SiteA · A–Z 0–9 - _ . / only', folderSet:'Folder applied', badPath:'Path may contain only A–Z a–z 0–9 - _ . /', current:'current',
+  p2h:'2 · Live sound levels',
+  p2p:'Top row LAF / LZF · middle row 1/3-octave RTA (36 bands 6.3 Hz–20 kHz) · bottom row time history with a 5 min–24 h range on a wall-clock axis, CSV export · 500 ms refresh',
+  allDev:'All 3 units',
+  p3h:'3 · Run all three units together',
+  p3p:'Immediate: count down the escape time, then INIT START on all units in one go · Schedule: set a start time; the console starts, stops and saves automatically',
+  setupH:'Measurement setup', escLbl:'Escape time — seconds for the operator to leave before start',
+  startAt:'Start time (this computer\'s clock · Asia/Bangkok)',
+  durLbl:'Duration (h : m : s) → MEAS:TIM:SET:SING', targetLbl:'Units to command',
+  startAll:'▶ Start all 3', stopAll:'■ Stop all', masterLbl:'Controller clock',
+  p4h:'4 · Result files on the units',
+  p4p:'Press the folder button to open each unit\'s Projects/ · click a file to preview and copy it for analysis (Excel / Python)',
+  refresh:'Refresh file list', console:'Command log', clear:'Clear', copy:'Copy',
+  ckey:'Connect Key', pass:'Password', connect:'Connect', disconnect:'Disconnect', connecting:'Connecting…',
+  idle:'Not connected', connected:'Connected', error:'Error', notConnected:'This unit is not connected — see menu 1',
+  idnWait:'*IDN? reply appears after connecting', serial:'Serial', fw:'Firmware', model:'Model',
+  folderNone:'not created', folderMade:'created', folderPending:'pending',
+  simNote:'<b>Simulation mode</b> — the three XL3 units are models (50 Hz transformer, motor/fan, background reference). Every menu sends real XL3 Control API commands and parses the replies; watch them in the command log below. Switch to <b>NTi Connect</b> when you are ready for real hardware.',
+  realNote:'<b>NTi Connect mode</b> — connects via wss://connect.nti-audio.com/&lt;ConnectKey&gt;/api/control/ (the XL3 must be online with NTi Connect enabled). <b>Note:</b> the page hosted on claude.ai blocks outbound connections, so download this HTML and open it on your own computer to talk to real units.',
+  needKey:'Enter Connect Key and Password first', badName:'Folder name may contain only A–Z a–z 0–9 - _ .', needConn:'Connect at least one unit first',
+  foldersDone:'Folders created', noFolder:'Folder not set (menu 1)',
+  armed:'Armed', escape:'Escape', running:'Running', saved:'Saved', stopped:'Stopped', waiting:'Waiting for start',
+  toStart:'to start', remaining:'remaining', elapsed:'elapsed',
+  execNoteNow:'Per unit: MEAS:TIM:MODE SING → MEAS:TIM:SET:SING &lt;ms&gt; → (escape) → INIT START + MEAS:INIT → timer ends → INIT STOP → files saved to the folder set in menu 1',
+  execNoteSched:'INIT START is sent to every unit at the scheduled time and INIT STOP when the duration ends — keep this page open until the run finishes',
+  schedPast:'Start time must be in the future', started:'Measurement started', stoppedAll:'Stopped and saved',
+  openFolder:'Open Projects folder', noFiles:'No files yet — run a measurement in menu 3', copied:'Copied', copyFail:'Copy failed',
+  files:'files', seqArm:'Setup', seqEsc:'Escape', seqRun:'Measure', seqSave:'Save',
+  over:'OVER', wsFail:'Connection failed — check: (1) the XL3 is online with NTi Connect enabled (2) the Connect Key matches the one shown on the unit (3) the API option is installed on the unit',
+  wsHosted:'This page is opened from claude.ai, which blocks connections to real devices — download the HTML file from the chat, open it on your computer/phone, then switch to NTi Connect again',
+  wsTimeout:'NTi Connect did not answer within 8 s — the XL3 may be offline or NTi Connect is not enabled on the unit',
+  wsNoPrompt:'Connected, but the unit sent no Password: prompt — check that the API option (Control API) is installed on the XL3',
+  wsBadPass:'The unit asked for the password again — wrong password',
+  wsClosed:'Server closed the connection (code {code}) — the Connect Key may be wrong or the unit is offline', demoOnly:'Simulation mode only',
+  openWeb:'Open result folder on the unit', openSftp:'SFTP', sftpTitle:'SFTP connection via NTi Connect', sftpNote:'For WinSCP / FileZilla / Cyberduck · if an SFTP client on this computer handles sftp:// links the button opens it directly, otherwise copy the values below · host/user convention taken from the API manual (SSH port 22) — verify against System Settings → Connections on the XL3', keyCopied:'NTi Connect opened in a new tab — if it asks for the Connect Key press Ctrl+V (already copied), then enter the unit password', realStor:'Result files live on this unit\'s SD card at <b>{path}</b> — press the button above to open them through the NTi Connect web page (unit screen + file download), no extra setup needed', exportCsv:'⬇ Export CSV', csvDone:'CSV exported ({n} rows)', csvNone:'No data to export yet', csvHosted:'The claude.ai-hosted page cannot download files — copy the text below into Excel instead', downsampled:'downsampled: band = min–max per pixel', external:'started from another device / on the unit', syncH:'Sync with unit', syncNoFile:'no state file', syncFile:'state file', syncAgo:'{s} s ago', syncBy:'by', syncMe:'this device', syncErr:'unreadable', syncNotConn:'This phone/PC is not connected to the XL3 — connect in menu 1 first to see runs started elsewhere', syncNote:'Run state is synchronised through the XL3 itself — every phone or PC that opens this page sees the same thing (RUNSTATUS + a state file on the SD card, every 5 s)', devTime:'Unit date-time', clockSrc:'Clock source', battery:'Battery / power', freeStor:'SD card free', options:'Options', runStatus:'Unit status', clockDiff:'unit clock differs from PC by {s}', devClocks:'Unit clocks (vs PC)', liveStopped:'Unit is stopped — the XL3 only streams live values over the API while measuring. Press ▶ Live view or Start on the unit', liveBtn:'▶ Live view (INIT START)', liveStopBtn:'■ Stop live view (INIT STOP)', liveBtnHint:'Puts the units into a continuous run so live values appear — the unit may save files according to its own autosave/logging settings', liveUndef:'Unit returns no values yet — see command log', logCleared:'Log cleared', mkFolderSim:'Create folder (simulated)', bands:'bands',
+ }
+};
+let LANG = 'th';
+const t = k => (I18N[LANG][k] ?? I18N.en[k] ?? k);
+
+/* ---------------- acoustics helpers ---------------- */
+// 36 one-third-octave nominal centre frequencies, 6.3 Hz … 20 kHz (matches MEAS:SLM:SPEC? "n = 36, fstart = 6.3 Hz")
+const BANDS = [6.3,8,10,12.5,16,20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
+const BAND_LABEL = f => f>=1000 ? (f/1000).toString().replace('.5','.5')+'k' : (''+f);
+// IEC 61672 A-weighting, dB, evaluated at band centre
+function aWeight(f){
+  const f2=f*f, c1=20.6**2, c2=107.7**2, c3=737.9**2, c4=12194**2;
+  const ra = (c4*f2*f2)/((f2+c1)*Math.sqrt((f2+c2)*(f2+c3))*(f2+c4));
+  return 20*Math.log10(ra)+2.0;
+}
+const A_W = BANDS.map(aWeight);
+const dbSum = arr => 10*Math.log10(arr.reduce((s,l)=>s+Math.pow(10,l/10),0));
+const fmt1 = v => (v==null||!isFinite(v)) ? '--.-' : v.toFixed(1);
+const pad2 = n => String(n).padStart(2,'0');
+const hms = s => { s=Math.max(0,Math.round(s)); return `${pad2(Math.floor(s/3600))}:${pad2(Math.floor(s%3600/60))}:${pad2(s%60)}`; };
+const stamp = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}_${pad2(d.getHours())}-${pad2(d.getMinutes())}-${pad2(d.getSeconds())}`;
+const clock = d => `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+
+/* ---------------- simulated XL3 (speaks the Control API) ---------------- */
+// Each profile is a Z-weighted 1/3-octave spectrum model of a piece of electrical equipment.
+const PROFILES = {
+  transformer:{ // 50 Hz mains → magnetostriction hum at 100 Hz and harmonics
+    serial:'A3A-00129-B1', fw:'1.30.5012', base:f=>60-6*Math.log2(f/63), jitter:1.2,
+    peaks:{100:21,200:15,300:11,400:9,500:6,630:4,800:3}, event:0
+  },
+  motor:{ // induction motor + cooling fan, blade-pass region around 250–315 Hz, broadband mid band
+    serial:'A3A-00130-B1', fw:'1.30.5012', base:f=>58-4*Math.log2(f/500)*(f>500?1:-0.4), jitter:2.0,
+    peaks:{250:9,315:7,100:5,1000:3,2000:2}, event:0.004
+  },
+  background:{ // reference position 10 m away, occasional passing vehicle
+    serial:'A3A-00131-B1', fw:'1.30.5012', base:f=>40-5*Math.log2(f/125), jitter:1.6,
+    peaks:{100:6,200:3}, event:0.012
+  }
+};
+class XL3Sim{
+  constructor(profileName){
+    this.p = PROFILES[profileName]; this.name=profileName;
+    this.connected=false; this.pass=null;
+    this.running=false; this.startT=0; this.timerMode='CONT'; this.single=60000;
+    this.eqAcc=null; this.eqN=0; this.zeqAcc=0;
+    this.specW='AF'; this.files={}; this.drift=0; this.eventLvl=0;
+    // device configuration (partial model of SYST:CONF:JS?) — storage.project_folder is where results are saved
+    this.conf={SLM:{spectrum:{octres:'1/3'},timer:{mode:'Continuous',set:60000},report_logging:{logging:{utc_for_text_files:'off',file_format:'binary',folder_struct:'default'},spectra:'eq, max, min'}},storage:{project_folder:'Projects/Default',autosave:'on'}};
+    this.tick(); setInterval(()=>this.tick(),500);
+  }
+  // physical model: recompute the current Z spectrum every 500 ms
+  tick(){
+    this.drift += (Math.random()-0.5)*0.4; this.drift*=0.97;
+    if(Math.random()<this.p.event) this.eventLvl = 10+Math.random()*10;
+    this.eventLvl*=0.88;
+    this.specZ = BANDS.map((f,i)=>{
+      let L=this.p.base(f)+(this.p.peaks[f]||0)+this.drift+(Math.random()-0.5)*2*this.p.jitter;
+      if(this.eventLvl>0.5 && f>=200 && f<=2000) L+=this.eventLvl*Math.exp(-Math.pow(Math.log2(f/630),2)/2);
+      return Math.max(15,L);
+    });
+    this.specA = this.specZ.map((L,i)=>L+A_W[i]);
+    this.laf = dbSum(this.specA); this.lzf = dbSum(this.specZ);
+    // Leq accumulators run from INIT START (or from connect in continuous mode)
+    this.eqN++; this.eqAcc=(this.eqAcc||0)+Math.pow(10,this.laf/10); this.zeqAcc+=Math.pow(10,this.lzf/10);
+    if(this.running && this.timerMode==='SING' && Date.now()-this.startT>=this.single){ this.stopAndSave(); }
+  }
+  get laeq(){ return this.eqN?10*Math.log10(this.eqAcc/this.eqN):null; }
+  get lzeq(){ return this.eqN?10*Math.log10(this.zeqAcc/this.eqN):null; }
+  resetEq(){ this.eqAcc=0; this.zeqAcc=0; this.eqN=0; }
+  async connect(key,pass){ // NTi Connect handshake: "Password:" prompt → password + LF → banner
+    await sleep(700+Math.random()*600);
+    if(!key||!pass) throw new Error('Password: (rejected)');
+    this.connected=true; this.pass=pass; this.key=key;
+    return `NTi Audio XL3 Control API, ${this.p.serial}, ${this.p.fw}`;
+  }
+  disconnect(){ this.connected=false; }
+  // ---- minimal Control API parser ----
+  async cmd(line){
+    await sleep(25+Math.random()*40);
+    const [head,...rest]=line.trim().split(/\s+/); const arg=rest.join(' ');
+    const H=head.toUpperCase();
+    if(H==='*IDN?') return `NTi Audio, XL3, ${this.p.serial}, ${this.p.fw}`;
+    if(H==='INIT'){ if(/START/i.test(arg)){ this.running=true; this.startT=Date.now(); this.resetEq(); this.log=[]; } else if(/STOP/i.test(arg)){ this.stopAndSave(); } return ''; }
+    if(H==='MEAS:INIT') return '';
+    if(H==='MEAS:TIMER?') return this.running? String(Math.floor((Date.now()-this.startT)/1000)) : '0';
+    if(H==='MEAS:TIM:MODE'){ this.timerMode=arg.toUpperCase().slice(0,4); return ''; }
+    if(H==='MEAS:TIM:SET:SING'){ this.single=parseInt(arg,10)||60000; return ''; }
+    if(H==='MEAS:TIM:SET:SING?') return String(this.single);
+    if(H==='MEAS:TIM:MODE?') return this.timerMode;
+    if(H==='MEAS:SLM:SPEC:WEIG'){ this.specW=arg.toUpperCase(); return ''; }
+    if(H==='MEAS:SLM:SPEC?'){ const s=this.specW.startsWith('Z')?this.specZ:this.specA; return s.map(v=>v.toFixed(1)).join(',')+' dB, OK'; }
+    if(H==='MEAS:SLM:123?'){
+      return arg.split(',').map(x=>x.trim().toUpperCase()).map(ind=>{
+        const v = ind==='LAF'?this.laf: ind==='LZF'?this.lzf: ind==='LAEQ'?this.laeq: ind==='LZEQ'?this.lzeq: ind==='LAFMAX'?this.laf+1.5:null;
+        return v==null? `, ERROR` : `${v.toFixed(1)} dB, ${v>130?'OVER':'OK'}`;
+      }).join(';');
+    }
+    if(H==='SYST:SOH?'){ const off={transformer:0.4,motor:-2.0,background:47}[this.name]||0; const dt=new Date(Date.now()+off*1000); const lt=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}:${String(dt.getSeconds()).padStart(2,'0')}`;
+      const soh={LOCALTIME:lt,TIMEZONE:'Asia/Bangkok',CLOCKSOURCE:this.name==='background'?'Internal':'NTP',BATTERYSOC:String({transformer:87,motor:64,background:23}[this.name]),FREESTORAGE:String({transformer:29140,motor:12877,background:60211}[this.name]),RUNSTATUS:this.running?'Running':'Stopped',POWERSOURCE:this.name==='background'?'Battery':'DcIn',TEMPERATURE:'34.2',GPSLOCATION:'13.6512 100.6215'};
+      return arg.split(',').map(k=>soh[k.trim().toUpperCase()]??'').join(';'); }
+    if(H==='SYST:OPTI?') return 'FO, EN, ER, IN, NC, AP, DX, RA';
+    if(H==='SYST:CONF:JS?') return JSON.stringify(this.conf);
+    if(H==='SYST:CONF:JS'){ try{ const j=JSON.parse(arg.replace(/^'|'$/g,'')); deepMerge(this.conf,j); return ''; }catch(e){ return ';'; } }
+    if(H==='SYST:ERR?') return '0';
+    if(H==='SYST:ERR:TEXT') return '';
+    if(H==='SYST:FILE:WRIT'){ const m=arg.match(/^"([^"]+)"\s*,\s*(\S*)/); if(!m) return ', ERROR'; this.files[m[1]]=atobSafe(m[2]); return ''; }
+    if(H==='SYST:FILE:READ?'){ const m=arg.match(/^"([^"]+)"/); const f=m&&this.files[m[1]]; return f==null? ', ERROR' : btoa(unescape(encodeURIComponent(f))); }
+    if(H==='SYST:FILE:LIST?'){ const m=arg.match(/^"([^"]*)"/); const pre=m?m[1]:''; return Object.keys(this.files).filter(k=>k.startsWith(pre)).join(';'); }
+    return ', ERROR';
+  }
+  // on INIT STOP the XL3 writes its result files into the active project folder
+  stopAndSave(){
+    if(!this.running) return; this.running=false;
+    const dev = DEVICES.find(d=>d.sim===this); if(dev) dev.onSaved(this);
+  }
+}
+const deepMerge=(a,b)=>{ for(const k in b){ if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])){ a[k]=a[k]&&typeof a[k]==='object'?a[k]:{}; deepMerge(a[k],b[k]); } else a[k]=b[k]; } return a; };
+const atobSafe = b64 => { try{ return decodeURIComponent(escape(atob(b64))); }catch(e){ return ''; } };
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+/* ---------------- real XL3 over NTi Connect (WebSocket) ---------------- */
+// Protocol per XL3 API manual: text lines terminated with LF (0x0A); after the socket opens the
+// device prompts "Password:"; the client answers <password>\n and receives the banner line.
+// Queries ("?") return a line; set-commands return an empty line. Commands are serialised.
+class XL3Remote{
+  constructor(){ this.ws=null; this.queue=[]; this.buf=''; this.connected=false; this.dec=new TextDecoder(); }
+  connect(key,pass){
+    return new Promise((res,rej)=>{
+      // A page served from claude.ai runs under a CSP that blocks every outbound socket → say so plainly
+      if(/claude\.ai$|anthropic|\.claudeusercontent\.com$/.test(location.hostname)) return rej(new Error(t('wsHosted')));
+      const url=`wss://connect.nti-audio.com/${encodeURIComponent(key.trim().toUpperCase())}/api/control/`;
+      let ws, opened=false, settled=false, sentPass=0, promptTimer=null, bannerTimer=null;
+      const done=(fn,v)=>{ if(settled) return; settled=true; clearTimeout(timer); clearTimeout(promptTimer); clearTimeout(bannerTimer); fn(v); };
+      const sendPass=why=>{ sentPass++; log(null,'>','[ws] password ('+why+')','sys'); ws.send(pass+'\n');
+        // some gateways send no banner line — after 2.5 s treat the socket as authenticated and let *IDN? prove it
+        clearTimeout(bannerTimer); bannerTimer=setTimeout(()=>{ this.connected=true; this.buf=''; done(res,'(no banner — verifying with *IDN?)'); },2500); };
+      try{ ws=new WebSocket(url); ws.binaryType='arraybuffer'; }catch(e){ return rej(new Error(t('wsFail'))); }
+      const timer=setTimeout(()=>{ try{ws.close();}catch(e){} done(rej,new Error(opened?t('wsNoPrompt'):t('wsTimeout'))); },8000);
+      ws.onopen=()=>{ opened=true; log(null,'<','[ws] open '+url,'sys');
+        // if the unit stays silent, send the password unprompted (the manual says the prompt "could be" Password:)
+        promptTimer=setTimeout(()=>{ if(!sentPass&&!settled) sendPass('no prompt after 1.5 s'); },1500); };
+      ws.onerror=()=>{ if(!opened) done(rej,new Error(t('wsFail'))); };
+      ws.onclose=ev=>{ this.connected=false; this.queue.forEach(q=>q.rej(new Error('closed'))); this.queue=[]; if(!settled) done(rej,new Error(opened?t('wsClosed').replace('{code}',ev.code):t('wsFail'))); };
+      ws.onmessage=ev=>{
+        const s = typeof ev.data==='string' ? ev.data : this.dec.decode(ev.data);   // text or binary frame → text
+        if(!this.connected||!settled) log(null,'<','[ws] frame '+(typeof ev.data==='string'?'text':'binary')+' '+JSON.stringify(s.slice(0,160)),'sys');
+        this.buf+=s;
+        if(!settled){
+          if(/Password:/i.test(this.buf)){ this.buf=this.buf.replace(/[\s\S]*Password:\s*/i,''); if(sentPass>=1){ return done(rej,new Error(t('wsBadPass'))); } clearTimeout(promptTimer); sendPass('prompt'); return; }
+          if(!sentPass) return;                       // still waiting for a prompt
+          const nl=this.buf.indexOf('\n'); if(nl>=0){ const banner=this.buf.slice(0,nl).trim(); this.buf=this.buf.slice(nl+1); if(!banner) return; this.connected=true; done(res,banner); }
+          return;
+        }
+        let nl; while((nl=this.buf.indexOf('\n'))>=0){ const line=this.buf.slice(0,nl); this.buf=this.buf.slice(nl+1); const q=this.queue.shift(); if(q) q.res(line.replace(/\r$/,'')); }
+      };
+      this.ws=ws;
+    });
+  }
+  cmd(line){
+    return new Promise((res,rej)=>{
+      if(!this.ws||this.ws.readyState!==1) return rej(new Error('not connected'));
+      this.queue.push({res,rej}); this.ws.send(line+'\n');
+      setTimeout(()=>{ const i=this.queue.findIndex(q=>q.res===res); if(i>=0){ this.queue.splice(i,1); rej(new Error('timeout')); } },5000);
+    });
+  }
+  disconnect(){ try{this.ws&&this.ws.close();}catch(e){} this.connected=false; }
+}
+</script>
+<script>
+/* =====================================================================
+   Device model, pages, charts, execution engine, storage, console
+   ===================================================================== */
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let MODE='sim';                 // 'sim' | 'real'
+let PAGE='connect';
+let RTA_W='A', TH_W='AZ', DEV_SEL='all';
+let TH_SPAN=5*60*1000;          // time-history window shown (selectable 5 min … 24 h)
+const TH_KEEP=24*3600*1000+60000; // samples kept in memory: 24 h
+const APP_VERSION='v17';
+const LOG=[]; let SHOW_POLL=false;
+// this browser's identity — used to tell our own run state from one written by another phone/PC
+const CLIENT_ID=(()=>{ try{ let id=localStorage.getItem('xl3trio_client'); if(!id){ id=Math.random().toString(36).slice(2,10); localStorage.setItem('xl3trio_client',id); } return id; }catch(e){ return Math.random().toString(36).slice(2,10); } })();
+
+/* ---------------- console ---------------- */
+function log(dev,dir,msg,cls=''){
+  const e={t:new Date(),dev,dir,msg,cls}; LOG.push(e); if(LOG.length>400) LOG.shift();
+  if(cls.includes('poll') && !SHOW_POLL){ $('#logCount').textContent=LOG.length; return; }
+  appendLogLine(e); $('#logCount').textContent=LOG.length;
+}
+function appendLogLine(e){
+  const body=$('#logBody'); const div=document.createElement('div');
+  div.className='log-line '+(e.dir==='<'?'rx ':'')+e.cls; if(e.dev) div.dataset.dev=e.dev;
+  div.innerHTML=`<span class="t">${clock(e.t)}</span><span class="d">${e.dev?'XL3-'+e.dev:'SYS'}</span><span class="dir">${esc(e.dir)}</span><span class="msg">${esc(e.msg)}</span>`;
+  const stick = body.scrollTop+body.clientHeight>=body.scrollHeight-8;
+  body.appendChild(div); while(body.children.length>400) body.firstChild.remove();
+  if(stick) body.scrollTop=body.scrollHeight;
+}
+function rerenderLog(){ const b=$('#logBody'); b.innerHTML=''; LOG.filter(e=>SHOW_POLL||!e.cls.includes('poll')).forEach(appendLogLine); }
+
+/* ---------------- device ---------------- */
+class Device{
+  constructor(id,profile){
+    this.id=id; this.label='XL3-'+id; this.profile=profile; this.sim=new XL3Sim(profile);
+    this.key=''; this.pass=''; this.status='idle'; this.err='';
+    this.serial=null; this.fw=null; this.model=null; this.adapter=null;
+    this.live={laf:null,lzf:null,laeq:null,lzeq:null,spec:null}; this.hist=[];
+    this.meas={state:'idle'}; this.saveFolder='Projects/XL3-'+id; this.folder=null; this.folderState='none'; this.confPath=null; this.confVal=null; this.soh={}; this.clockOffset=null; this.options=''; this.files=[]; this.rec=[]; this.lastRec=0;
+  }
+  async cmd(line,poll=false){
+    const cls=poll?'poll':'';
+    log(this.id,'>',line,cls);
+    try{ const r=await this.adapter.cmd(line); log(this.id,'<',r===''?'(LF)':r,cls); return r; }
+    catch(e){ log(this.id,'<',e.message,'err'); throw e; }
+  }
+  async connect(){
+    if(!this.key||!this.pass){ toast(t('needKey')); return; }
+    this.status='connecting'; this.err=''; renderConnect(); renderChips();
+    this.adapter = MODE==='sim' ? this.sim : new XL3Remote();
+    log(this.id,'>',MODE==='sim'?`[sim] open XL3Sim(${this.profile}) key=${this.key}`:`open wss://connect.nti-audio.com/${this.key}/api/control/`,'sys');
+    try{
+      const banner=await this.adapter.connect(this.key,this.pass);
+      log(this.id,'<',banner,'sys');
+      const idn=await this.cmd('*IDN?');
+      const parts=idn.split(',').map(s=>s.trim());
+      this.model=parts[1]||'XL3'; this.serial=parts[2]||banner.split(',')[1]?.trim()||'?'; this.fw=parts[3]||'';
+      this.status='connected'; this.sim.resetEq();
+      await readSoh(this,true); try{ this.options=await this.cmd('SYST:OPTI?'); }catch(e){}
+      await readStorageConf(this);
+    }catch(e){ this.status='error'; this.err=e.message; this.adapter=null; }
+    renderConnect(); renderChips(); renderFolderPreview(); renderExecTargets(); renderLive(true); renderStorage();
+  }
+  disconnect(){ this.adapter&&this.adapter.disconnect(); this.adapter=null; this.status='idle'; this.soh={}; this.clockOffset=null; this.liveRun=false; this.liveNote=''; this.serial=null; this.live={laf:null,lzf:null,laeq:null,lzeq:null,spec:null}; this.hist=[]; renderConnect(); renderChips(); renderExecTargets(); renderLive(true); renderStorage(); }
+  get on(){ return this.status==='connected' && this.adapter; }
+  // the simulated unit finished a single-mode run → it writes result files into its active folder
+  onSaved(sim){
+    const d=this; const rows=d.rec; const now=new Date();
+    const fold=d.folder||d.saveFolder||'Projects'; const base=fold+'/'+(fold.split('/').pop()||'XL3')+'_'+stamp(rows.length?new Date(rows[0].t):now);
+    const lafs=rows.map(r=>r.laf), laeq=rows.length?dbSum(lafs)-10*Math.log10(rows.length):null, lzeq=rows.length?dbSum(rows.map(r=>r.lzf))-10*Math.log10(rows.length):null;
+    const log123=['# XL3 Trio Console — 123 log\t'+d.serial,'Date\tTime\tLAF [dB]\tLZF [dB]',
+      ...rows.map(r=>{const x=new Date(r.t);return `${x.toISOString().slice(0,10)}\t${clock(x)}\t${fmt1(r.laf)}\t${fmt1(r.lzf)}`;})].join('\n');
+    const rta=['# XL3 Trio Console — RTA 1/3 oct LZF log\t'+d.serial,'Time\t'+BANDS.map(b=>b+' Hz').join('\t'),
+      ...rows.filter(r=>r.spec).map(r=>clock(new Date(r.t))+'\t'+r.spec.map(v=>v.toFixed(1)).join('\t'))].join('\n');
+    const rep=['# XL3 Trio Console — Report','Device\t'+d.model+' '+d.serial+' fw '+d.fw,
+      'Start\t'+(rows.length?new Date(rows[0].t).toLocaleString():'-'),'End\t'+now.toLocaleString(),'Duration [s]\t'+rows.length,
+      'LAeq (computed from 1 s LAF samples) [dB]\t'+fmt1(laeq),'LZeq (computed) [dB]\t'+fmt1(lzeq),'LAFmax [dB]\t'+fmt1(lafs.length?Math.max(...lafs):null),'LAFmin [dB]\t'+fmt1(lafs.length?Math.min(...lafs):null),
+      'Weighting\tA / Z','Timer\tSingle, '+sim.single+' ms'].join('\n');
+    sim.files[base+'_123_Log.txt']=log123; sim.files[base+'_RTA_Log.txt']=rta; sim.files[base+'_123_Report.txt']=rep;
+    sim.files[base+'.xl3']=`[binary XL3 measurement file — ${(180+rows.length*1.7).toFixed(0)} kB — open with NTi XL3 Data Explorer]`;
+    d.meas.state='saved'; log(d.id,'<',`saved 4 files → ${base}_*`,'sys'); renderExecStatus(); renderStorage();
+  }
+}
+const DEVICES=[new Device(1,'transformer'),new Device(2,'motor'),new Device(3,'background')];
+const D = id => DEVICES[id-1];
+
+/* ---------------- state of health: unit clock, battery, storage ---------------- */
+const SOH_FULL=['LOCALTIME','TIMEZONE','CLOCKSOURCE','BATTERYSOC','FREESTORAGE','RUNSTATUS','POWERSOURCE'];
+const SOH_POLL=['LOCALTIME','BATTERYSOC','FREESTORAGE','RUNSTATUS','POWERSOURCE'];
+async function readSoh(d,full){
+  const keys=full?SOH_FULL:SOH_POLL;
+  try{ const r=await d.cmd('SYST:SOH? '+keys.join(','),!full); const v=r.split(';'); keys.forEach((k,i)=>{ if(v[i]!==undefined&&v[i]!=='') d.soh[k]=v[i].trim(); });
+    // unit clock vs this computer: parse "YYYY-MM-DD HH:MM:SS" as local time
+    const m=/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/.exec(d.soh.LOCALTIME||''); if(m){ const dt=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]); d.clockOffset=(dt.getTime()-Date.now())/1000; }
+    d._sohAt=Date.now(); }catch(e){}
+  if(!full) syncFromDevice(d); else { d._sohAt=Date.now(); }
+}
+const devNow = d => d.clockOffset==null?null:new Date(Date.now()+d.clockOffset*1000);
+const devClock = d => { const n=devNow(d); return n?clock(n):'--:--:--'; };
+const devDate = d => { const n=devNow(d); return n?`${n.getFullYear()}-${pad2(n.getMonth()+1)}-${pad2(n.getDate())}`:'—'; };
+const offTxt = d => d.clockOffset==null?'':(d.clockOffset>=0?'+':'')+d.clockOffset.toFixed(1)+' s';
+// every second: tick every element that shows a unit clock without rebuilding the DOM
+setInterval(()=>{ DEVICES.forEach(d=>{ $$(`[data-devclock="${d.id}"]`).forEach(el=>{ el.textContent=d.on?devClock(d):'--:--:--'; }); $$(`[data-devdate="${d.id}"]`).forEach(el=>{ el.textContent=d.on?devDate(d)+' '+devClock(d):'—'; }); }); renderDevClocks(); },1000);
+function renderDevClocks(){ const el=$('#devClocks'); if(!el) return; const on=DEVICES.filter(d=>d.on); el.innerHTML=on.length?on.map(d=>`<span class="pill ${Math.abs(d.clockOffset||0)>2?'warn':''}" data-dev="${d.id}" title="${esc(t('clockDiff').replace('{s}',offTxt(d)))}"><span class="dev-tag">${d.label}</span><span class="mono">${devClock(d)}</span><span class="mono" style="font-weight:400">${offTxt(d)}</span></span>`).join(''):`<span style="color:var(--faint)">—</span>`; }
+
+/* ---------------- cross-device sync: the XL3 itself is the shared state ----------------
+   1. Truth: SYST:SOH? RUNSTATUS + MEAS:TIMER? tell every client whether the unit is measuring and for how long.
+   2. Detail: the commanding client writes a small JSON state file to the SD card (SYST:FILE:WRIT); other
+      clients read it (SYST:FILE:READ?) every 5 s and adopt phase / schedule / duration / who started it.  */
+const STATE_FILE = d => `${storRoot(d)}/_xl3trio_state.json`;
+const b64 = s => btoa(unescape(encodeURIComponent(s)));
+async function writeState(d,phase){
+  if(!d.on) return;
+  const st={v:1,by:CLIENT_ID,at:Date.now(),phase:phase||RUN.phase,mode:RUN.mode,armedAt:RUN.armedAt||null,startAt:RUN.startAt||null,endAt:RUN.endAt||null,durMs:durMs(),escSec:+$('#escSec').value||0,folder:d.folder||d.saveFolder||null};
+  try{ await d.cmd(`SYST:FILE:WRIT "${STATE_FILE(d)}", ${b64(JSON.stringify(st))}`,true); d._stateAt=st.at; }catch(e){}
+}
+async function readState(d){
+  try{ const r=await d.cmd(`SYST:FILE:READ? "${STATE_FILE(d)}"`,true);
+    if(!r||r===';'||/ERROR/.test(r)){ d.syncInfo={file:'none',raw:r}; return null; }
+    let txt=r.trim().replace(/^"|"$/g,'').replace(/,\s*(OK|ERROR)\s*$/i,'').replace(/\s+/g,'');
+    let dec=atobSafe(txt); if(!dec&&/^\s*\{/.test(r)) dec=r.trim();          // some firmwares may answer with plain text
+    let j=null; try{ j=JSON.parse(dec); }catch(e){ d.syncInfo={file:'bad',raw:r.slice(0,80)}; if(!d._syncBadLogged){ d._syncBadLogged=true; log(d.id,'<','[sync] state file reply not decodable: '+JSON.stringify(r.slice(0,120)),'err'); } return null; }
+    if(!(j&&j.v===1)){ d.syncInfo={file:'bad',raw:r.slice(0,80)}; return null; }
+    d.syncInfo={file:'ok',st:j}; return j;
+  }catch(e){ d.syncInfo={file:'err',raw:String(e.message)}; if(!d._syncErrLogged){ d._syncErrLogged=true; log(d.id,'<','[sync] state file read failed: '+e.message,'err'); } return null; }
+}
+// XL3 replies may be "270", "270 s", "270000 ms", "00:04:30" or "…, OK" — normalise to seconds / milliseconds
+function parseElapsed(r){ r=String(r??'').trim().split(',')[0].trim(); let m=/^(\d+):(\d{2}):(\d{2}(?:\.\d+)?)$/.exec(r); if(m) return +m[1]*3600+ +m[2]*60+ +m[3]; m=/^(\d+):(\d{2}(?:\.\d+)?)$/.exec(r); if(m) return +m[1]*60+ +m[2]; const v=parseFloat(r); if(!isFinite(v)) return null; if(/ms\b/i.test(r)||v>86400) return v/1000; return v; }
+function parseDurationMs(r){ r=String(r??'').trim().split(',')[0].trim(); const m=/^(\d+):(\d{2}):(\d{2})$/.exec(r); if(m) return (+m[1]*3600+ +m[2]*60+ +m[3])*1000; const v=parseFloat(r); if(!isFinite(v)||v<=0) return null; if(/ms\b/i.test(r)) return v; if(/\bs\b/i.test(r)) return v*1000; return v; }
+const isRunning = d => /run|meas|start|record|active/i.test(d.soh.RUNSTATUS||'');
+function adoptState(d,st){
+  const live=['escape','armed','running'];
+  if(live.includes(st.phase)){
+    RUN.phase=st.phase; RUN.mode=st.mode||'now'; RUN.owner=st.by; RUN.armedAt=st.armedAt||st.at; RUN.startAt=st.startAt; RUN.endAt=st.endAt; RUN.durMs=st.durMs||(st.endAt-st.startAt);
+    if(!RUN.targets.includes(d.id)) RUN.targets.push(d.id);
+    d.meas.state=st.phase; d.meas.external=true;
+    if(st.durMs){ $('#durH').value=Math.floor(st.durMs/3600000); $('#durM').value=Math.floor(st.durMs%3600000/60000); $('#durS').value=Math.floor(st.durMs%60000/1000); }
+    if(st.escSec!=null) $('#escSec').value=st.escSec;
+    $$('#execMode button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.m===RUN.mode)); $('#nowFields').style.display=RUN.mode==='now'?'flex':'none'; $('#schedFields').style.display=RUN.mode==='sched'?'flex':'none';
+    if(RUN.mode==='sched'&&st.startAt){ const dd=new Date(st.startAt); $('#schedStart').value=`${dd.getFullYear()}-${pad2(dd.getMonth()+1)}-${pad2(dd.getDate())}T${pad2(dd.getHours())}:${pad2(dd.getMinutes())}`; }
+  } else if(st.phase==='done' && live.includes(d.meas.state)){
+    d.meas.state='saved';
+    if(RUN.targets.map(D).every(x=>!live.includes(x.meas.state))) RUN.phase='done';
+  }
+  renderExecStatus(); updateLiveBtn(); if(PAGE==='live') renderLive();
+}
+async function syncFromDevice(d){
+  if(!d.on) return;
+  const st=await readState(d);
+  if(st && st.by!==CLIENT_ID && st.at>(d._stateAt||0)){ d._stateAt=st.at; log(d.id,'<',`[sync] adopted ${st.phase} from ${st.by} (${Math.round((Date.now()-st.at)/1000)} s ago)`,'sys'); adoptState(d,st); }
+  d.syncRun={status:d.soh.RUNSTATUS,at:Date.now()};
+  const running=isRunning(d); const live=['escape','armed','running'];
+  if(running && d.meas.state!=='running'){
+    // the unit is measuring but this client did not start it (other phone/PC, or the Start key on the unit)
+    let elapsed=0, single=null, mode='';
+    try{ const raw=await d.cmd('MEAS:TIMER?',true); d.syncRun.timerRaw=raw; elapsed=parseElapsed(raw)||0; d.syncRun.timer=elapsed; }catch(e){}
+    try{ mode=await d.cmd('MEAS:TIM:MODE?',true); d.syncRun.mode=mode; if(/SING/i.test(mode)){ const rawS=await d.cmd('MEAS:TIM:SET:SING?',true); d.syncRun.singleRaw=rawS; single=parseDurationMs(rawS); d.syncRun.single=single; } }catch(e){ d.syncRun.mode='?'; }
+    if(single){
+      d.meas.state='running'; d.meas.external=true;
+      if(RUN.phase!=='running'){ RUN.phase='running'; RUN.mode=RUN.mode||'now'; RUN.owner=RUN.owner&&RUN.owner!==CLIENT_ID?RUN.owner:'unit'; RUN.durMs=single; RUN.startAt=Date.now()-elapsed*1000; RUN.endAt=RUN.startAt+single; RUN.targets=RUN.targets.filter(id=>live.includes(D(id).meas.state)); }
+      if(!RUN.targets.includes(d.id)) RUN.targets.push(d.id);
+      renderExecStatus(); updateLiveBtn(); if(PAGE==='live') renderLive();
+    } else if(/CONT/i.test(mode)||!mode){ d.liveRun=true; updateLiveBtn(); }   // continuous run = someone's live view
+  }
+  if(running && d.meas.state==='running' && RUN.phase==='running' && RUN.targets[0]===d.id){
+    // re-align the countdown with the unit's own timer every cycle (corrects clock skew / adoption lag)
+    try{ const raw=await d.cmd('MEAS:TIMER?',true); const el=parseElapsed(raw); d.syncRun=Object.assign(d.syncRun||{},{timerRaw:raw,timer:el});
+      if(el!=null){ const startAt=Date.now()-el*1000; const dur=RUN.durMs||(RUN.endAt-RUN.startAt); if(Math.abs(startAt-RUN.startAt)>1500){ RUN.startAt=startAt; RUN.endAt=startAt+dur; renderExecStatus(); } } }catch(e){}
+  }
+  if(!running){
+    if(d.meas.state==='running') d.meas.state='saved';
+    if(RUN.phase==='running' && RUN.targets.map(D).every(x=>!live.includes(x.meas.state))){ RUN.phase='done'; RUN.endAt=Math.min(RUN.endAt||Date.now(),Date.now()); renderExecStatus(); if(PAGE==='live') renderLive(); }
+    if(d.liveRun&&RUN.owner!==CLIENT_ID){ d.liveRun=false; updateLiveBtn(); }
+  }
+}
+
+/* ---------------- top bar chips ---------------- */
+function renderChips(){
+  $('#chips').innerHTML=DEVICES.map(d=>`<div class="chip" data-dev="${d.id}" data-status="${d.status}"><span class="dot"></span><span class="tag">${d.label}</span><span class="lvl">${d.on?`<span class="mono">${esc(d.serial)}</span> · <span class="mono" data-devclock="${d.id}">${devClock(d)}</span> · LAF <b>${fmt1(d.live.laf)}</b> dB`:esc(t(d.status==='connecting'?'connecting':d.status==='error'?'error':'idle'))}</span></div>`).join('');
+}
+function updateChips(){ DEVICES.forEach(d=>{ const b=$(`.chip[data-dev="${d.id}"] b`); if(b) b.textContent=fmt1(d.live.laf); }); }
+
+/* ---------------- page 1: connect ---------------- */
+function renderConnect(){
+  $('#simNote').innerHTML=MODE==='sim'?t('simNote'):t('realNote'); $('#simNote').className='note'+(MODE==='sim'?'':' warn');
+  $('#devCards').innerHTML=DEVICES.map(d=>`
+  <div class="card dev-card" data-dev="${d.id}">
+    <div class="card-h"><div style="display:flex;gap:8px;align-items:center"><span class="dev-tag">${d.label}</span><span style="font-size:12px;color:var(--muted)">${d.on?esc(d.serial):(MODE==='sim'?esc(profileLabel(d.profile)):'NTi XL3')}</span></div>
+      <span class="pill ${d.status==='connected'?'ok':d.status==='error'?'err':d.status==='connecting'?'warn':''}"><span class="dot"></span>${esc(t(d.status==='connected'?'connected':d.status==='error'?'error':d.status==='connecting'?'connecting':'idle'))}</span></div>
+    <div class="card-b">
+      <div class="field"><label>${t('ckey')}</label><input class="mono" data-f="key" value="${esc(d.key)}" placeholder="XL3-XXXX-XXXX" autocomplete="off" ${d.on?'disabled':''}></div>
+      <div class="field"><label>${t('pass')}</label><input class="mono" type="password" data-f="pass" value="${esc(d.pass)}" placeholder="••••" autocomplete="off" ${d.on?'disabled':''}></div>
+      <div class="idn ${d.on?'live':''}">${d.on?`<dl class="kv"><dt>${t('model')}</dt><dd>${esc(d.model)}</dd><dt>${t('serial')}</dt><dd>${esc(d.serial)}</dd><dt>${t('fw')}</dt><dd>${esc(d.fw)}</dd>
+        <dt>${t('devTime')}</dt><dd><b data-devdate="${d.id}">${devDate(d)} ${devClock(d)}</b> <span style="color:var(--muted)">${esc(d.soh.TIMEZONE||'')}</span>${d.clockOffset!=null&&Math.abs(d.clockOffset)>2?` <span class="pill warn">${esc(t('clockDiff').replace('{s}',offTxt(d)))}</span>`:''}</dd>
+        <dt>${t('clockSrc')}</dt><dd>${esc(d.soh.CLOCKSOURCE||'—')}</dd>
+        <dt>${t('battery')}</dt><dd>${d.soh.BATTERYSOC?esc(d.soh.BATTERYSOC)+' %':'—'} · ${esc(d.soh.POWERSOURCE||'')}</dd>
+        <dt>${t('freeStor')}</dt><dd>${d.soh.FREESTORAGE?(+d.soh.FREESTORAGE/1024).toFixed(1)+' GB':'—'} · ${esc(d.soh.RUNSTATUS||'')}</dd>
+        <dt>${t('options')}</dt><dd style="white-space:normal">${esc(d.options||'—')}</dd></dl>`:d.status==='error'?`<span style="color:var(--err)">${esc(d.err)}</span>`:t('idnWait')}</div>
+      ${d.on?`<button class="btn sm ghost" data-act="disc" style="justify-content:center">${t('disconnect')}</button>`:`<button class="btn primary sm" data-act="conn" ${d.status==='connecting'?'disabled':''}>${d.status==='connecting'?t('connecting'):t('connect')}</button>`}
+      <button class="btn sm" data-act="web" ${d.key?'':'disabled'} title="https://connect.nti-audio.com/${esc(d.key)}/" style="justify-content:center">${ICO.globe} ${t('openWeb')}</button>
+      <div class="field" style="border-top:1px solid var(--border);padding-top:12px">
+        <label style="display:flex;justify-content:space-between;align-items:center">${t('saveLbl')}<span class="pill ${d.folderState==='made'?'ok':''}">${d.folderState==='made'?t('folderMade'):t('folderNone')}</span></label>
+        <div style="display:flex;gap:6px"><input class="mono" data-f="saveFolder" value="${esc(d.saveFolder)}" placeholder="Projects/TR-SiteA" spellcheck="false" autocomplete="off" ${d.on?'':'disabled'}><button class="btn sm accent" style="white-space:nowrap;flex:none;min-width:max-content;word-break:keep-all" data-act="setfolder" ${d.on?'':'disabled'}>${t('apply')}</button></div>
+        <div class="hint">${d.on&&d.confPath?`${t('confKey')}: <span class="mono">${esc(d.confPath.join('.'))}</span> · ${t('current')}: <span class="mono">${esc(String(d.confVal))}</span>`:d.on?t('confUnknown'):t('saveHint')}</div>
+      </div>
+    </div>
+  </div>`).join('');
+  $$('#devCards .dev-card').forEach(card=>{
+    const d=D(+card.dataset.dev);
+    $$('input',card).forEach(inp=>inp.addEventListener('input',()=>{ d[inp.dataset.f]=inp.value; if(inp.dataset.f==='saveFolder'&&d.folderState==='made'){ d.folderState='none'; } if(inp.dataset.f!=='pass') persist(); }));
+    $$('button[data-act]',card).forEach(b=>b.addEventListener('click',()=>({conn:()=>d.connect(),disc:()=>d.disconnect(),setfolder:()=>applyFolder(d),web:()=>openNtiWeb(d),sftp:()=>openSftp(d)})[b.dataset.act]()));
+  });
+}
+const profileLabel = p => ({transformer:LANG==='th'?'หม้อแปลง 2000 kVA · 50 Hz':'2000 kVA transformer · 50 Hz',motor:LANG==='th'?'มอเตอร์ + พัดลมระบายความร้อน':'Induction motor + cooling fan',background:LANG==='th'?'จุดอ้างอิงพื้นหลัง (10 m)':'Background reference (10 m)'}[p]);
+const cleanPath = s => s.trim().replace(/\\/g,'/').replace(/^\/+|\/+$/g,'').replace(/\/{2,}/g,'/');
+const validPath = s => /^[A-Za-z0-9_.\-]+(\/[A-Za-z0-9_.\-]+)*$/.test(s);
+function renderFolderPreview(){}
+// Read the unit's configuration (SYST:CONF:JS?) and locate the key that holds the result/project folder
+async function readStorageConf(d){
+  d.confPath=null; d.confVal=null;
+  try{
+    const r=await d.cmd('SYST:CONF:JS?'); const js=r.replace(/^'|'$/g,'');
+    let conf; try{ conf=JSON.parse(js); }catch(e){ log(d.id,'<','[diag] config is not JSON: '+js.slice(0,200),'err'); return; }
+    d.conf=conf;
+    const hits=[]; (function walk(o,p){ for(const k in o){ const v=o[k]; const path=[...p,k];
+      if(v&&typeof v==='object') walk(v,path);
+      else if(typeof v==='string' && /project|folder|director|path|storage/i.test(k) && !/struct|format/i.test(k)) hits.push({path,v}); } })(conf,[]);
+    if(hits.length){ hits.sort((x,y)=>(/project/i.test(y.path.join())?1:0)-(/project/i.test(x.path.join())?1:0)); d.confPath=hits[0].path; d.confVal=hits[0].v;
+      if(MODE==='real'&&!d._confLogged){ d._confLogged=true; log(d.id,'<','[diag] folder keys in config: '+hits.map(h=>h.path.join('.')+'='+JSON.stringify(h.v)).join(' | '),'sys'); } }
+    else if(MODE==='real'){ log(d.id,'<','[diag] full config (no folder key found): '+js,'sys'); }
+  }catch(e){}
+}
+// Set where this unit saves its results: (1) write the key into the unit config, (2) make sure the folder exists on the SD card
+async function applyFolder(d){
+  const path=cleanPath(d.saveFolder||''); if(!path||!validPath(path)){ toast(t('badPath')); return; }
+  d.saveFolder=path; if(!d.on){ toast(t('needConn')); return; }
+  try{
+    if(d.confPath){ const obj={}; let cur=obj; d.confPath.forEach((k,i)=>{ cur[k]=i===d.confPath.length-1?path:{}; cur=cur[k]; });
+      const r=await d.cmd(`SYST:CONF:JS '${JSON.stringify(obj)}'`); if(r===';') throw new Error('config rejected'); }
+    // no mkdir in the API — a small marker file creates the folder
+    const marker=btoa(unescape(encodeURIComponent(`XL3 Trio Console ${new Date().toISOString()} ${d.serial}`)));
+    const w=await d.cmd(`SYST:FILE:WRIT "${path}/_folder.txt", ${marker}`); if(w===';'||/ERROR/.test(w)) throw new Error('write rejected');
+    if(MODE==='real'){ const eq=await d.cmd('SYST:ERR?'); if(eq&&!/^0\b/.test(eq)) log(d.id,'<','[diag] SYST:ERR? '+eq,'err'); }
+    await readStorageConf(d);
+    d.folder=path; d.folderState='made'; toast(t('folderSet')+' — '+d.label);
+  }catch(e){ d.folderState='none'; toast(d.label+': '+e.message); }
+  renderConnect(); renderExecStatus(); renderStorage(); persist();
+}
+const ICO={globe:'<svg class="svg-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+  dl:'<svg class="svg-ico" viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4-4m4 4l4-4M4 19h16"/></svg>'};
+// NTi Connect web UI: base page + Connect Key; the key is copied too so it can be pasted if the direct URL is not accepted
+async function openNtiWeb(d){
+  const key=(d.key||'').trim().toUpperCase(); if(!key) return;
+  try{ await navigator.clipboard.writeText(key); toast(t('keyCopied')); }catch(e){}
+  const a=document.createElement('a'); a.href=`https://connect.nti-audio.com/${encodeURIComponent(key)}/`; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  log(d.id,'>','[web] open '+a.href,'sys');
+}
+// SFTP through NTi Connect (SSH, port 22): hand the sftp:// link to the OS and show the parameters for manual entry
+function openSftp(d){
+  const key=(d.key||'').trim().toUpperCase(); if(!key) return;
+  const url=`sftp://${encodeURIComponent(key)}@connect.nti-audio.com:22/`;
+  const txt=[t('sftpNote'),'',`Host      connect.nti-audio.com`,`Port      22 (SSH / SFTP)`,`User      ${key}`,`Password  ${d.pass?(LANG==='th'?'(รหัสผ่านของเครื่อง)':'(the unit password)'):'—'}`,`Path      /  → Projects/${d.saveFolder&&d.saveFolder.startsWith('Projects/')?d.saveFolder.slice(9)+'/':''}`,'',`URL       ${url}`,'',
+    `WinSCP:   open sftp://${key}@connect.nti-audio.com:22/`,`FileZilla: sftp://connect.nti-audio.com  user ${key}  port 22`].join('\n');
+  $('#modalTitle').textContent=t('sftpTitle')+' — '+d.label; $('#modalBody').textContent=txt; $('#modal').classList.add('open');
+  const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+  log(d.id,'>','[sftp] '+url,'sys');
+}
+/* ---------------- page 2: live ---------------- */
+function renderLive(rebuild=false){
+  const grid=$('#liveGrid'); const sel=DEV_SEL==='all'?DEVICES:[D(+DEV_SEL)];
+  grid.style.setProperty('--cols',sel.length);
+  if(rebuild||grid.dataset.sel!==DEV_SEL){
+    grid.dataset.sel=DEV_SEL;
+    grid.innerHTML=sel.map(d=>d.on?`
+    <div class="live-dev" data-dev="${d.id}">
+      <div class="hdr"><span class="dev-tag">${d.label}</span><span class="serial">${esc(d.serial)}</span><span class="serial" data-devclock="${d.id}" title="${t('devTime')}">${devClock(d)}</span><span class="pill ${d.meas.state==='running'?'run':''}" data-r="meas">${d.meas.state==='running'?t('running'):esc(MODE==='sim'?profileLabel(d.profile):(d.model||'XL3'))}</span></div>
+      <div class="tiles">
+        <div class="tile a" data-k="laf"><div class="k"><span>LAF</span><span>dB(A)</span></div><div class="v">--.-</div></div>
+        <div class="tile" data-k="lzf"><div class="k"><span>LZF</span><span>dB(Z)</span></div><div class="v">--.-</div></div>
+      </div>
+      <div class="chart"><div class="ch"><span class="t">RTA 1/3 oct <small data-r="rtaw">L${RTA_W}F · 36 ${t('bands')}</small></span><span class="legend"><span class="mono" data-r="rtamax"></span></span></div><canvas data-c="rta"></canvas><div class="tip"></div></div>
+      <div class="chart tall"><div class="ch"><span class="t">Time history <small data-r="thspan">${spanLabel()} · ${LANG==='th'?'เวลานาฬิกา':'wall clock'}</small></span><span class="legend"><span><i></i>LAF</span><span><i class="z"></i>LZF</span></span></div><canvas data-c="th"></canvas><div class="tip"></div></div>
+    </div>`:`<div class="live-dev" data-dev="${d.id}"><div class="hdr"><span class="dev-tag">${d.label}</span></div><div class="disconnected">${t('notConnected')}</div></div>`).join('');
+    $$('canvas',grid).forEach(attachHover);
+  }
+  sel.forEach(d=>{ if(!d.on) return; const el=$(`.live-dev[data-dev="${d.id}"]`,grid); if(!el) return;
+    ['laf','lzf'].forEach(k=>{ const tile=$(`.tile[data-k="${k}"]`,el); $('.v',tile).textContent=fmt1(d.live[k]); tile.classList.toggle('over',d.live[k]>130); });
+    const pill=$('[data-r="meas"]',el); pill.className='pill'+(d.meas.state==='running'?' run':''); pill.textContent=d.meas.state==='running'?t('running'):(d.liveNote||(MODE==='sim'?profileLabel(d.profile):esc(d.model||'XL3')));
+    $('[data-r="rtaw"]',el).textContent=`L${RTA_W}F · 36 ${t('bands')}`; $('[data-r="thspan"]',el).textContent=`${spanLabel()} · ${LANG==='th'?'เวลานาฬิกา':'wall clock'}`;
+    if(d.live.spec){ const mi=d.live.spec.indexOf(Math.max(...d.live.spec)); $('[data-r="rtamax"]',el).textContent=`max ${BAND_LABEL(BANDS[mi])} Hz · ${fmt1(d.live.spec[mi])} dB`; }
+    drawRTA($('canvas[data-c="rta"]',el),d); drawTH($('canvas[data-c="th"]',el),d);
+  });
+}
+function setupCanvas(c){
+  const dpr=window.devicePixelRatio||1, w=c.clientWidth, h=c.clientHeight;
+  if(c.width!==Math.round(w*dpr)||c.height!==Math.round(h*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); }
+  const ctx=c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h);
+  const cs=getComputedStyle(c); const tok=k=>cs.getPropertyValue(k).trim();
+  return {ctx,w,h,dev:tok('--dev'),grid:tok('--grid'),muted:tok('--muted'),faint:tok('--faint'),z:tok('--z-line'),surf:tok('--surface'),mono:tok('--mono')};
+}
+function drawRTA(c,d){
+  if(!c) return; const {ctx,w,h,dev,grid,muted,z,mono}=setupCanvas(c); const spec=d.live.spec; if(!spec) return;
+  const L=34,R=8,T=8,B=22, pw=w-L-R, ph=h-T-B, y0=0,y1=140; const y=v=>T+ph-(Math.min(y1,Math.max(y0,v))-y0)/(y1-y0)*ph;
+  ctx.font=`10px ${mono}`; ctx.fillStyle=muted; ctx.strokeStyle=grid; ctx.lineWidth=1; ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let v=0;v<=140;v+=20){ ctx.beginPath(); ctx.moveTo(L,y(v)+.5); ctx.lineTo(w-R,y(v)+.5); ctx.stroke(); ctx.fillText(v,L-6,y(v)); }
+  const bw=pw/BANDS.length, gap=2; ctx.fillStyle=dev;
+  spec.forEach((v,i)=>{ const x=L+i*bw+gap/2, top=y(v), bot=T+ph; const hh=Math.max(0,bot-top); if(hh<=0) return;
+    const r=Math.min(3,bw-gap,hh); ctx.beginPath(); ctx.moveTo(x,bot); ctx.lineTo(x,top+r); ctx.arcTo(x,top,x+r,top,r); ctx.lineTo(x+bw-gap-r,top); ctx.arcTo(x+bw-gap,top,x+bw-gap,top+r,r); ctx.lineTo(x+bw-gap,bot); ctx.closePath(); ctx.fill(); });
+  ctx.fillStyle=muted; ctx.textAlign='center'; ctx.textBaseline='top';
+  [31.5,63,125,250,500,1000,2000,4000,8000,16000].forEach(f=>{ const i=BANDS.indexOf(f); ctx.fillText(BAND_LABEL(f),L+i*bw+bw/2,T+ph+6); });
+  const hi=c._hover; if(hi!=null&&spec[hi]!=null){ ctx.strokeStyle=z; ctx.beginPath(); ctx.moveTo(L+hi*bw+bw/2,T); ctx.lineTo(L+hi*bw+bw/2,T+ph); ctx.stroke(); }
+  c._geom={L,bw,n:BANDS.length};
+}
+const spanLabel=()=>{ const s=TH_SPAN/1000; return s<3600?`${s/60} min`:`${s/3600} h`; };
+// pick the tick step so labels sit ≥ 70 px apart
+function tickStep(pw){ const steps=[60,120,300,600,900,1800,3600,7200,10800,21600]; for(const st of steps){ if(pw/(TH_SPAN/1000/st)>=70) return st*1000; } return 21600000; }
+// visible window → one bucket per pixel column: {min,max,mean,last} for LAF and LZF
+function bucketize(hist,now,span,L,pw){
+  const start=now-span, n=Math.max(1,Math.floor(pw)); const B=new Array(n);
+  for(const p of hist){ if(p.t<start) continue; const i=Math.min(n-1,Math.floor((p.t-start)/span*n)); let b=B[i]; if(!b){ b=B[i]={t0:p.t,t1:p.t,aMin:p.laf,aMax:p.laf,aSum:0,zMin:p.lzf,zMax:p.lzf,zSum:0,n:0,last:p}; }
+    b.t1=p.t; b.n++; b.aSum+=p.laf; b.zSum+=p.lzf; if(p.laf<b.aMin)b.aMin=p.laf; if(p.laf>b.aMax)b.aMax=p.laf; if(p.lzf<b.zMin)b.zMin=p.lzf; if(p.lzf>b.zMax)b.zMax=p.lzf; b.last=p; }
+  return B;
+}
+// y axis for the time history: robust (1st–99th percentile) auto range on round steps, or a fixed range
+let TH_SCALE='auto';
+function yScale(vals){
+  if(TH_SCALE==='30-90') return [30,90,10]; if(TH_SCALE==='0-140') return [0,140,20];
+  const s=vals.filter(isFinite).sort((a,b)=>a-b); if(!s.length) return [30,90,10];
+  const q=p=>s[Math.min(s.length-1,Math.max(0,Math.floor(p*(s.length-1))))];
+  let lo=q(0.01)-4, hi=q(0.99)+4;                      // ignore isolated glitches (e.g. the first sample after start)
+  if(hi-lo<20){ const m=(hi+lo)/2; lo=m-10; hi=m+10; }
+  lo=Math.max(0,lo);                                     // sound levels are never negative
+  const range=hi-lo; const step=[5,10,20,50].find(st=>range/st<=6)||50;
+  lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step; if(hi<=lo) hi=lo+step;
+  return [lo,hi,step];
+}
+function drawTH(c,d){
+  if(!c) return; const {ctx,w,h,dev,grid,muted,z,mono}=setupCanvas(c); const hist=d.hist; if(hist.length<2) return;
+  const L=34,R=8,T=8,B=20, pw=w-L-R, ph=h-T-B; const now=Date.now(), span=TH_SPAN;
+  const buckets=bucketize(hist,now,span,L,pw); const filled=buckets.filter(Boolean); if(!filled.length) return;
+  const dense=filled.some(b=>b.n>1); c._dense=dense;
+  const vals=[]; filled.forEach(b=>{ if(TH_W!=='Z'){ vals.push(b.aMin,b.aMax); } if(TH_W!=='A'){ vals.push(b.zMin,b.zMax); } });
+  const [lo,hiV,step]=yScale(vals);
+  const x=tm=>L+pw*(1-(now-tm)/span), y=v=>T+ph-(v-lo)/(hiV-lo)*ph;
+  ctx.font=`10px ${mono}`; ctx.fillStyle=muted; ctx.strokeStyle=grid; ctx.lineWidth=1; ctx.textAlign='right'; ctx.textBaseline='middle';
+  for(let v=lo;v<=hiV+1e-6;v+=step){ ctx.beginPath(); ctx.moveTo(L,y(v)+.5); ctx.lineTo(w-R,y(v)+.5); ctx.stroke(); ctx.fillText(v,L-6,y(v)); }
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  // x axis = wall clock; tick spacing adapts to the selected range
+  const ts=tickStep(pw); for(let tm=Math.ceil((now-span)/ts)*ts; tm<=now; tm+=ts){ const px=x(tm); if(px<L+24||px>w-R-64) continue; ctx.strokeStyle=grid; ctx.beginPath(); ctx.moveTo(px+.5,T); ctx.lineTo(px+.5,T+ph); ctx.stroke(); const dd=new Date(tm); ctx.fillText(pad2(dd.getHours())+':'+pad2(dd.getMinutes()),px,T+ph+5); }
+  ctx.textAlign='right'; ctx.fillText(clock(new Date(now)),w-R,T+ph+5); ctx.textAlign='center';
+  ctx.save(); ctx.beginPath(); ctx.rect(L,T,pw,ph); ctx.clip();
+  const series=(kMin,kMax,kSum,color,dash)=>{
+    const pts=filled.map(b=>({px:x((b.t0+b.t1)/2),min:b[kMin],max:b[kMax],mean:b[kSum]/b.n}));
+    if(dense){ // min–max band, then the mean line on top
+      ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p.px,y(p.max)):ctx.moveTo(p.px,y(p.max))); for(let i=pts.length-1;i>=0;i--) ctx.lineTo(pts[i].px,y(pts[i].min)); ctx.closePath();
+      ctx.globalAlpha=dash?0.18:0.28; ctx.fillStyle=color; ctx.fill(); ctx.globalAlpha=1; }
+    ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=dense?1.5:2; ctx.setLineDash(dash?[4,3]:[]); ctx.lineJoin='round';
+    pts.forEach((p,i)=>i?ctx.lineTo(p.px,y(p.mean)):ctx.moveTo(p.px,y(p.mean))); ctx.stroke(); ctx.setLineDash([]);
+    const lastB=filled[filled.length-1]; ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x(lastB.last.t),y(kMin==='aMin'?lastB.last.laf:lastB.last.lzf),3.5,0,Math.PI*2); ctx.fill(); };
+  if(TH_W!=='A') series('zMin','zMax','zSum',z,true); if(TH_W!=='Z') series('aMin','aMax','aSum',dev,false);
+  const hv=c._hoverT; if(hv){ ctx.strokeStyle=muted; ctx.setLineDash([2,3]); ctx.beginPath(); ctx.moveTo(x(hv),T); ctx.lineTo(x(hv),T+ph); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.restore();
+  if(dense){ ctx.fillStyle=muted; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText(t('downsampled'),L+4,T+2); }
+  c._geom={L,pw,now,span,buckets};
+}
+function attachHover(c){
+  const tip=c.parentElement.querySelector('.tip'); const kind=c.dataset.c; const d=()=>D(+c.closest('[data-dev]').dataset.dev);
+  const onMove=ev=>{ const r=c.getBoundingClientRect(); const pt=ev.touches?ev.touches[0]:ev; const mx=pt.clientX-r.left; const g=c._geom; if(!g) return;
+    if(kind==='rta'){ const i=Math.floor((mx-g.L)/g.bw); if(i<0||i>=g.n){ c._hover=null; tip.style.display='none'; return; } c._hover=i; const v=d().live.spec?.[i];
+      tip.style.display='block'; tip.style.left=(g.L+i*g.bw+g.bw/2)+'px'; tip.style.top='34px'; tip.textContent=`${BANDS[i]} Hz · ${fmt1(v)} dB`; }
+    else { const tm=g.now-(1-(mx-g.L)/g.pw)*g.span; const bs=g.buckets||[]; const n=bs.length; let i=Math.min(n-1,Math.max(0,Math.floor((mx-g.L)/g.pw*n))); let k=i; while(k>=0&&!bs[k]) k--; if(k<0){ k=i; while(k<n&&!bs[k]) k++; } const b=bs[k]; if(!b) return; c._hoverT=(b.t0+b.t1)/2;
+      tip.style.display='block'; tip.style.left=mx+'px'; tip.style.top='34px';
+      tip.textContent=b.n>1?`${clock(new Date(b.t0))}–${clock(new Date(b.t1))} · LAF ${fmt1(b.aMin)}–${fmt1(b.aMax)} · LZF ${fmt1(b.zMin)}–${fmt1(b.zMax)}`:`${clock(new Date(b.last.t))} · LAF ${fmt1(b.last.laf)} · LZF ${fmt1(b.last.lzf)}`; }
+  };
+  const onLeave=()=>{ c._hover=null; c._hoverT=null; tip.style.display='none'; };
+  c.addEventListener('mousemove',onMove); c.addEventListener('mouseleave',onLeave);
+  c.addEventListener('touchstart',onMove,{passive:true}); c.addEventListener('touchmove',onMove,{passive:true}); c.addEventListener('touchend',()=>setTimeout(onLeave,1500));
+}
+
+/* ---------------- polling loop (500 ms, per XL3 API refresh) ---------------- */
+let specWSent={};
+async function pollAll(){
+  await Promise.all(DEVICES.map(async d=>{
+    if(!d.on||d._busy) return; d._busy=true;
+    try{
+      // XL3 API: MEAS:INIT latches all MEASure values synchronously; without it the values are undefined
+      await d.cmd('MEAS:INIT',true);
+      const r=await d.cmd('MEAS:SLM:123? LAF, LZF',true);            // live levels only — no Leq, so nothing has to be recorded
+      const f=r.split(';').map(s=>parseFloat(s));                       // empty field (error) → NaN
+      const got=f.some(isFinite);
+      if(got){ d.live.laf=isFinite(f[0])?f[0]:null; d.live.lzf=isFinite(f[1])?f[1]:null; d.liveNote=''; d.liveEmpty=0; }
+      else { d.live.laf=null; d.live.lzf=null; d.liveEmpty=(d.liveEmpty||0)+1;
+        if(MODE==='real'){ d.liveNote=t('liveStopped');
+          if(Date.now()-(d._errAt||0)>15000){ d._errAt=Date.now(); try{ await d.cmd('SYST:ERR:TEXT ON'); const eq=await d.cmd('SYST:ERR?'); log(d.id,'<','[diag] 123 reply: '+JSON.stringify(r)+' · SYST:ERR? '+eq,'sys'); }catch(e){} } } }
+      if(Date.now()-(d._sohAt||0)>5000) await readSoh(d,false);
+      const wantW=RTA_W+'F'; if(specWSent[d.id]!==wantW){ await d.cmd('MEAS:SLM:SPEC:WEIG '+wantW,true); specWSent[d.id]=wantW; }
+      const s=await d.cmd('MEAS:SLM:SPEC? LIVE',true); const arr=s.split(' dB')[0].split(',').map(parseFloat); if(arr.length>=36&&isFinite(arr[0])) d.live.spec=arr.slice(0,36); else if(arr.length>=12&&isFinite(arr[0])) d.live.spec=padSpec(arr);
+      const now=Date.now(); if(isFinite(d.live.laf)&&isFinite(d.live.lzf)){ d.hist.push({t:now,laf:d.live.laf,lzf:d.live.lzf}); } while(d.hist.length&&now-d.hist[0].t>TH_KEEP) d.hist.shift();
+      if(d.meas.state==='running'&&now-d.lastRec>=1000&&isFinite(d.live.laf)){ d.lastRec=now; d.rec.push({t:now,laf:d.live.laf,lzf:d.live.lzf,spec:d.live.spec?(RTA_W==='Z'?d.live.spec:d.live.spec.map((v,i)=>v-A_W[i])):null}); }
+    }catch(e){ /* keep polling; error already logged */ }
+    d._busy=false;
+  }));
+  updateChips(); if(PAGE==='live'){ renderLive(); updateLiveBtn(); }
+}
+// CSV export of the visible time-history range, all connected units merged on a 500 ms grid
+function exportCsv(){
+  const now=Date.now(), start=now-TH_SPAN; const on=DEVICES.filter(d=>d.on&&d.hist.length);
+  if(!on.length){ toast(t('csvNone')); return; }
+  const grid=new Map(); on.forEach(d=>d.hist.forEach(p=>{ if(p.t<start) return; const k=Math.round(p.t/500)*500; let row=grid.get(k); if(!row){ row={}; grid.set(k,row); } row[d.id]=p; }));
+  const keys=[...grid.keys()].sort((a,b)=>a-b);
+  const head=['Date','Time',...on.flatMap(d=>[`${d.label} ${d.serial} LAF [dB]`,`${d.label} ${d.serial} LZF [dB]`])];
+  const lines=[head.join(',')]; keys.forEach(k=>{ const dt=new Date(k); const row=grid.get(k); lines.push([`${dt.getFullYear()}-${pad2(dt.getMonth()+1)}-${pad2(dt.getDate())}`,`${clock(dt)}.${String(dt.getMilliseconds()).padStart(3,'0').slice(0,1)}`,...on.flatMap(d=>{ const p=row[d.id]; return p?[fmt1(p.laf),fmt1(p.lzf)]:['','']; })].join(',')); });
+  const csv='\ufeff'+lines.join('\r\n'); const name=`xl3-trio_${stamp(new Date(start))}_${spanLabel().replace(' ','')}.csv`;
+  if(/claude\.ai$|anthropic|\.claudeusercontent\.com$/.test(location.hostname)){ $('#modalTitle').textContent=name; $('#modalBody').textContent=t('csvHosted')+'\n\n'+csv; $('#modal').classList.add('open'); return; }
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000);
+  toast(t('csvDone').replace('{n}',keys.length)); log(null,'·','[csv] '+name+' · '+keys.length+' rows','sys');
+}
+// explicit live-view control: the operator decides when the units run continuously
+function updateLiveBtn(){
+  const btn=$('#liveRunBtn'); const on=DEVICES.filter(d=>d.on);
+  if(MODE!=='real'||!on.length){ btn.hidden=true; return; }
+  const anyRun=on.some(d=>d.liveRun); btn.hidden=RUN.phase==='running'||RUN.phase==='escape'||RUN.phase==='armed';
+  btn.textContent=anyRun?t('liveStopBtn'):t('liveBtn'); btn.title=t('liveBtnHint'); btn.className='btn sm '+(anyRun?'':'accent');
+}
+async function toggleLiveRun(){
+  const on=DEVICES.filter(d=>d.on); const anyRun=on.some(d=>d.liveRun);
+  for(const d of on){ try{ if(anyRun){ if(d.liveRun){ await d.cmd('INIT STOP'); d.liveRun=false; d.liveRunWanted=false; } }
+    else { await d.cmd('MEAS:TIM:MODE CONT'); await d.cmd('INIT START'); d.liveRun=true; d.liveRunWanted=true; } }catch(e){} }
+  updateLiveBtn();
+}
+// a unit set to 1/1-octave (12 bands) or a shorter range: spread what we got onto the 36-band axis
+function padSpec(arr){ const out=new Array(36).fill(NaN); const off=36-arr.length; arr.forEach((v,i)=>out[Math.max(0,off+i)]=v); return out.map(v=>isFinite(v)?v:0); }
+setInterval(pollAll,500);
+
+/* ---------------- page 3: execute ---------------- */
+const RUN={mode:'now',phase:'idle',targets:[],startAt:0,endAt:0,owner:null};
+const durMs = ()=>((+$('#durH').value||0)*3600+(+$('#durM').value||0)*60+(+$('#durS').value||0))*1000;
+function renderExecTargets(){
+  $('#execTargets').innerHTML=DEVICES.map(d=>`<label class="pill ${d.on?'ok':''}" style="cursor:pointer;padding:5px 10px;gap:8px"><input type="checkbox" data-t="${d.id}" ${d.on?'checked':'disabled'} style="margin:0"> ${d.label} <span class="mono" style="font-weight:400">${d.on?esc(d.serial):'—'}</span></label>`).join('');
+  renderExecStatus();
+}
+function selectedTargets(){ return $$('#execTargets input:checked').map(i=>D(+i.dataset.t)).filter(d=>d.on); }
+function renderExecStatus(){
+  const targets=RUN.phase==='idle'?selectedTargets():RUN.targets.map(D);
+  $('#execStatus').innerHTML=(targets.length?targets:DEVICES.filter(d=>d.on)).map(d=>{
+    const st=d.meas.state; const phaseIdx={idle:-1,armed:0,escape:1,running:2,saved:3,stopped:3}[st]??-1;
+    let pct=0, isEsc=false, clockTxt='--:--', clockLbl='';
+    const now=Date.now();
+    if(st==='escape'||st==='armed'){ const tot=RUN.startAt-RUN.armedAt, left=RUN.startAt-now; pct=tot>0?100*(1-left/tot):0; isEsc=true; clockTxt=hms(left/1000); clockLbl=t('toStart'); }
+    else if(st==='running'){ const tot=RUN.endAt-RUN.startAt, left=RUN.endAt-now; pct=100*(1-left/tot); clockTxt=hms(left/1000); clockLbl=t('remaining'); }
+    else if(st==='saved'||st==='stopped'){ pct=100; clockTxt=hms((RUN.endAt-RUN.startAt)/1000); clockLbl=t(st); }
+    const pill = st==='running'?`<span class="pill run"><span class="dot"></span>${t('running')}</span>`: st==='saved'?`<span class="pill ok">${t('saved')}</span>`: st==='escape'?`<span class="pill warn">${t('escape')}</span>`: st==='armed'?`<span class="pill warn">${t(RUN.mode==='sched'?'waiting':'armed')}</span>`: st==='stopped'?`<span class="pill">${t('stopped')}</span>`:`<span class="pill">Idle</span>`;
+    return `<div class="st-row" data-dev="${d.id}"><span class="dev-tag">${d.label}</span>
+      <div class="mid"><div class="line1">${pill}<span class="serial">${esc(d.serial)}</span><span class="serial" data-devclock="${d.id}">${devClock(d)}</span>${d.meas.external&&['escape','armed','running'].includes(st)?`<span class="pill">${t('external')}</span>`:''}<span style="color:var(--muted);font-family:var(--mono);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.folder||d.saveFolder||t('noFolder'))}</span></div>
+        <div class="bar ${isEsc?'escape':''}"><i style="width:${Math.max(0,Math.min(100,pct))}%"></i></div>
+        <div class="seq">${['seqArm','seqEsc','seqRun','seqSave'].map((k,i)=>`<div class="${i<=phaseIdx?'on':''}">${t(k)}<b>${['MEAS:TIM:SET:SING','wait','INIT START','INIT STOP'][i]}</b></div>`).join('')}</div>
+      </div><div class="clock">${clockTxt}<small>${clockLbl}</small></div></div>`; }).join('') || `<div class="disconnected">${t('needConn')}</div>`;
+  $('#stopAll').disabled=!['armed','escape','running'].includes(RUN.phase);
+  $('#startAll').disabled=['armed','escape','running'].includes(RUN.phase);
+}
+async function startAll(){
+  const targets=selectedTargets(); if(!targets.length){ toast(t('needConn')); return; }
+  const dur=durMs(); if(dur<1000){ toast('duration ≥ 1 s'); return; }
+  let startAt; const now=Date.now();
+  if(RUN.mode==='sched'){ startAt=new Date($('#schedStart').value).getTime(); if(!isFinite(startAt)||startAt<=now){ toast(t('schedPast')); return; } }
+  else startAt=now+((+$('#escSec').value||0)*1000);
+  RUN.targets=targets.map(d=>d.id); RUN.armedAt=now; RUN.startAt=startAt; RUN.endAt=startAt+dur; RUN.durMs=dur; RUN.phase=RUN.mode==='sched'?'armed':'escape'; RUN.owner=CLIENT_ID;
+  for(const d of targets){ d.meas.state=RUN.phase; d.meas.external=false; d.rec=[]; try{ if(d.liveRun){ await d.cmd('INIT STOP'); d.liveRun=false; } await d.cmd('MEAS:TIM:MODE SING'); await d.cmd('MEAS:TIM:SET:SING '+dur); }catch(e){} await writeState(d); }
+  renderExecStatus();
+}
+async function beginRun(){
+  RUN.phase='running'; const t0=Date.now(); RUN.startAt=t0; RUN.durMs=durMs(); RUN.endAt=t0+RUN.durMs;
+  await Promise.all(RUN.targets.map(async id=>{ const d=D(id); if(!d.on) return; try{ await d.cmd('INIT START'); await d.cmd('MEAS:INIT'); d.meas.state='running'; d.rec=[]; d.lastRec=0; }catch(e){ d.meas.state='stopped'; } await writeState(d,'running'); }));
+  toast(t('started')); renderExecStatus(); if(PAGE==='live') renderLive();
+}
+async function stopAll(auto){
+  if(!auto) RUN.owner=CLIENT_ID;
+  const running=RUN.targets.map(D).filter(d=>['running','escape','armed'].includes(d.meas.state));
+  RUN.phase='done';
+  await Promise.all(running.map(async d=>{ const was=d.meas.state; try{ if(d.on) await d.cmd('INIT STOP'); }catch(e){}
+    if(was!=='running'){ d.meas.state='stopped'; } else if(d.meas.state==='running'){ d.meas.state=MODE==='sim'?'saved':'saved'; } }));
+  if(!auto) RUN.endAt=Date.now();
+  for(const d of running){ await writeState(d,'done'); }
+  // real units: go back to a continuous run so the Live page keeps updating
+  if(MODE==='real') for(const d of running){ try{ if(d.on&&d.liveRunWanted){ await sleep(800); await d.cmd('MEAS:TIM:MODE CONT'); await d.cmd('INIT START'); d.liveRun=true; } }catch(e){} }
+  toast(t('stoppedAll')); renderExecStatus(); renderStorage(); if(PAGE==='live') renderLive();
+}
+function renderSyncPanel(){
+  const panel=$('#syncPanel'); if(!panel) return; if(MODE!=='real'||PAGE!=='exec'){ panel.hidden=true; return; } panel.hidden=false;
+  const rows=DEVICES.map(d=>{ if(!d.on) return `<div style="display:flex;gap:8px;align-items:center;padding:4px 0"><span class="dev-tag" data-dev="${d.id}">${d.label}</span><span style="color:var(--warn)">${t('syncNotConn')}</span></div>`;
+    const si=d.syncInfo||{}, sr=d.syncRun||{}; let file;
+    if(si.file==='ok'){ const s=si.st; file=`${t('syncFile')}: <b>${esc(s.phase)}</b> · ${t('syncBy')} <span class="mono">${s.by===CLIENT_ID?t('syncMe'):esc(s.by)}</span> · ${t('syncAgo').replace('{s}',Math.round((Date.now()-s.at)/1000))}`; }
+    else if(si.file==='none') file=`<span style="color:var(--faint)">${t('syncNoFile')} (${esc(STATE_FILE(d))})</span>`; else if(si.file) file=`<span style="color:var(--err)">${t('syncErr')}: ${esc(si.raw||'')}</span>`; else file='…';
+    return `<div style="display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--border)"><span class="dev-tag" data-dev="${d.id}">${d.label}</span>
+      <div>RUNSTATUS <b class="mono">${esc(sr.status||'—')}</b>${sr.timerRaw!=null?` · MEAS:TIMER? <span class="mono">${esc(String(sr.timerRaw))}</span> → ${sr.timer!=null?hms(sr.timer):'?'}`:''}${sr.mode?` · MODE <span class="mono">${esc(sr.mode)}</span>`:''}${sr.singleRaw?` · SING <span class="mono">${esc(String(sr.singleRaw))}</span> → ${sr.single?hms(sr.single/1000):'?'}`:''}<br>${file}</div></div>`; }).join('');
+  $('#syncBody').innerHTML=`<div style="color:var(--faint);margin-bottom:4px">${t('syncNote')} · ${APP_VERSION} · client <span class="mono">${CLIENT_ID}</span></div>`+rows;
+}
+function execTick(){
+  const now=Date.now(); $('#nowClock').textContent=new Date().toLocaleString();
+  const mine=RUN.owner===CLIENT_ID;             // only the client that started the run drives its transitions; others mirror the unit
+  if(mine&&(RUN.phase==='escape'||RUN.phase==='armed')&&now>=RUN.startAt) beginRun();
+  else if(mine&&RUN.phase==='running'&&now>=RUN.endAt) stopAll(true);
+  else if(!mine&&RUN.phase==='running'&&now>=RUN.endAt+15000){ RUN.phase='done'; RUN.targets.map(D).forEach(d=>{ if(d.meas.state==='running') d.meas.state='saved'; }); renderExecStatus(); }
+  const ph=$('#phaseLbl'), mc=$('#masterCount');
+  if(RUN.phase==='escape'||RUN.phase==='armed'){ ph.textContent=t(RUN.phase==='armed'?'waiting':'escape'); mc.textContent=hms((RUN.startAt-now)/1000); }
+  else if(RUN.phase==='running'){ ph.textContent=t('running'); mc.textContent=hms((RUN.endAt-now)/1000); }
+  else if(RUN.phase==='done'){ ph.textContent=t('saved'); mc.textContent=hms((RUN.endAt-RUN.startAt)/1000); }
+  else { ph.textContent='Idle'; mc.textContent=hms(durMs()/1000); }
+  if(PAGE==='exec'&&RUN.phase!=='idle'&&RUN.phase!=='done') renderExecStatus();
+  $('#durHint').textContent=`MEAS:TIM:SET:SING ${durMs()} · ${hms(durMs()/1000)}`;
+  if(PAGE==='exec') renderSyncPanel();
+}
+setInterval(execTick,500);
+
+/* ---------------- page 4: storage ---------------- */
+const OPEN={};
+const storRoot = d => (d.folder||d.saveFolder||'Projects').split('/')[0];
+async function refreshFiles(d){
+  if(!d.on){ d.files=[]; return; }
+  try{ const r=await d.cmd(`SYST:FILE:LIST? "${storRoot(d)}/"`); d.files=r&&!/ERROR/.test(r)?r.split(';').filter(Boolean):[]; }catch(e){ d.files=[]; }
+}
+async function renderStorage(fetch=false){
+  if(fetch) await Promise.all(DEVICES.map(refreshFiles)); else await Promise.all(DEVICES.filter(d=>d.on&&MODE==='sim').map(refreshFiles));
+  const ico=`<svg class="svg-ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`;
+  const fico=`<svg class="svg-ico" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>`;
+  $('#storGrid').innerHTML=DEVICES.map(d=>{
+    const open=OPEN[d.id];
+    // group files by folder (strip ".folder" markers)
+    const folders={}; d.files.forEach(p=>{ const parts=p.split('/'); const file=parts.pop(); const dir=parts.join('/'); (folders[dir]??=[]); if(file!=='.folder'&&file!=='_folder.txt'&&!file.startsWith('_xl3trio')) folders[dir].push({name:file,path:p}); });
+    const dirs=Object.keys(folders).sort();
+    return `<div class="card dev-card" data-dev="${d.id}">
+      <div class="card-h"><div style="display:flex;gap:8px;align-items:center"><span class="dev-tag">${d.label}</span><span class="mono" style="font-size:12px;color:var(--muted)">${d.on?esc(d.serial):'—'}</span></div>
+        ${MODE==='real'?`<button class="btn sm accent" data-web="${d.id}" ${d.key?'':'disabled'}>${ICO.globe} ${t('openWeb')}</button>`:`<button class="btn sm ${open?'':'accent'}" data-open="${d.id}" ${d.on?'':'disabled'}>${ico} ${t('openFolder')}</button>`}</div>
+      <div class="card-b" style="display:block">${MODE==='real'?`<div class="note" style="margin-bottom:${d.files.length?'10px':'0'}">${t('realStor').replace('{path}',esc(d.folder||d.saveFolder||'Projects/'))}</div>`:''}${MODE==='real'&&!d.files.length?'':!d.on?`<div class="disconnected">${t('notConnected')}</div>`: !open&&MODE!=='real'?`<div class="tree"><div class="node folder" data-open="${d.id}"><span class="chev">▸</span>${ico} ${esc(storRoot(d))}/</div></div>`:
+        `<div class="tree"><div class="node folder open" data-open="${d.id}"><span class="chev">▸</span>${ico} ${esc(storRoot(d))}/</div>
+          ${dirs.length?dirs.map(dir=>{ const fs=folders[dir]; const sub=dir.replace(new RegExp('^'+storRoot(d).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'/?'),''); return (sub?`<div class="node folder" style="padding-left:22px"><span class="chev" style="transform:rotate(90deg)">▸</span>${ico} <span style="color:var(--dev)">${esc(sub)}</span>/ <span style="color:var(--faint);font-weight:400">${fs.length} ${t('files')}</span></div>`:'')+
+              (fs.length?fs.map(f=>`<div class="node file" data-file="${esc(f.path)}" ${sub?'style="padding-left:52px"':''}>${fico}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span><span class="sz">${f.name.endsWith('.xl3')?'~kB':'txt'}</span></div>`).join(''):`<div class="empty">${t('noFiles')}</div>`); }).join(''):`<div class="empty">${t('noFiles')}</div>`}
+        </div>`}</div></div>`; }).join('');
+  $$('#storGrid [data-open]').forEach(b=>b.addEventListener('click',()=>{ OPEN[b.dataset.open]=!OPEN[b.dataset.open]; renderStorage(); }));
+  $$('#storGrid [data-web]').forEach(b=>b.addEventListener('click',()=>openNtiWeb(D(+b.dataset.web))));
+  $$('#storGrid [data-file]').forEach(n=>n.addEventListener('click',()=>previewFile(D(+n.closest('[data-dev]').dataset.dev),n.dataset.file)));
+}
+async function previewFile(d,path){
+  let txt=''; try{ const r=await d.cmd(`SYST:FILE:READ? "${path}"`); txt=/ERROR/.test(r)?r:atobSafe(r); }catch(e){ txt=e.message; }
+  $('#modalTitle').textContent=path; $('#modalBody').textContent=txt; $('#modal').classList.add('open');
+}
+
+/* ---------------- misc UI ---------------- */
+let toastT; function toast(m){ const el=$('#toast'); el.textContent=m; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2200); }
+function applyLang(){
+  $$('[data-i18n]').forEach(el=>{ const k=el.dataset.i18n; const sub=el.querySelector('.sub'); const txt=t(k); if(sub){ el.firstChild.textContent=txt; sub.textContent=t(k+'s'); } else el.textContent=txt; });
+  $$('#langSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===LANG));
+  $('#execNote').innerHTML=t(RUN.mode==='sched'?'execNoteSched':'execNoteNow')+(MODE==='real'?'<br><span style="color:var(--faint)">'+t('syncNote')+'</span>':'');
+  $('#adapterState').textContent=MODE==='sim'?'adapter: XL3Sim · Control API text · 500 ms poll':'adapter: XL3Remote · wss://connect.nti-audio.com/<key>/api/control/';
+  renderConnect(); renderFolderPreview(); renderLive(true); renderExecTargets(); renderStorage(); $('#pollChk').nextSibling.textContent=LANG==='th'?' แสดงคำสั่ง polling':' show polling';
+}
+function showPage(p){ PAGE=p; $$('.page').forEach(s=>s.classList.toggle('active',s.id==='page-'+p)); $$('#nav button').forEach(b=>b.dataset.page===p?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+  if(p==='live') renderLive(true); if(p==='exec') renderExecTargets(); if(p==='storage') renderStorage(); }
+function persist(){ try{ localStorage.setItem('xl3trio',JSON.stringify({lang:LANG,mode:MODE,keys:DEVICES.map(d=>d.key),folders:DEVICES.map(d=>d.saveFolder),span:TH_SPAN,esc:$('#escSec').value,dur:[$('#durH').value,$('#durM').value,$('#durS').value]})); }catch(e){} }
+function restore(){ try{ const s=JSON.parse(localStorage.getItem('xl3trio')||'null'); if(!s) return; LANG=s.lang||'th'; MODE=s.mode||'sim'; (s.keys||[]).forEach((k,i)=>DEVICES[i].key=k||''); (s.folders||[]).forEach((f,i)=>{ if(f) DEVICES[i].saveFolder=f; }); if(s.span) TH_SPAN=s.span; if(s.esc) $('#escSec').value=s.esc; if(s.dur){ [$('#durH').value,$('#durM').value,$('#durS').value]=s.dur; } }catch(e){} }
+
+/* ---------------- wire-up ---------------- */
+(function init(){
+  // polling toggle inside the console header
+  const lab=document.createElement('label'); lab.style.cssText='display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer'; lab.innerHTML='<input type="checkbox" id="pollChk" style="margin:0"> show polling'; $('.drawer-h .sp').before(lab);
+  $('#pollChk').addEventListener('change',e=>{ SHOW_POLL=e.target.checked; rerenderLog(); });
+  restore();
+  $$('#modeSeg button').forEach(b=>{ b.setAttribute('aria-pressed',b.dataset.mode===MODE); b.addEventListener('click',()=>{ MODE=b.dataset.mode; $$('#modeSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b)); DEVICES.forEach(d=>d.on&&d.disconnect()); specWSent={}; applyLang(); persist(); }); });
+  $$('#langSeg button').forEach(b=>b.addEventListener('click',()=>{ LANG=b.dataset.lang; applyLang(); persist(); }));
+  $$('#nav button').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+  $('#fillDemo').addEventListener('click',()=>{ DEVICES.forEach((d,i)=>{ d.key=`XL3-DEMO-${['A7K2','B3M9','C5R4'][i]}`; d.pass='1234'; }); DEVICES.forEach(d=>{ if(/^Projects\/XL3-\d$/.test(d.saveFolder)) d.saveFolder='Projects/TR-2000kVA-'+['SiteA','SiteB','Ref'][d.id-1]; }); renderConnect(); persist(); });
+  $('#connectAll').addEventListener('click',()=>DEVICES.filter(d=>!d.on).forEach(d=>d.connect()));
+  $$('#devSel button').forEach(b=>b.addEventListener('click',()=>{ DEV_SEL=b.dataset.dev; $$('#devSel button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderLive(true); }));
+  $$('#rtaW button').forEach(b=>b.addEventListener('click',()=>{ RTA_W=b.dataset.w; $$('#rtaW button').forEach(x=>x.setAttribute('aria-pressed',x===b)); }));
+  $$('#thW button').forEach(b=>b.addEventListener('click',()=>{ TH_W=b.dataset.w; $$('#thW button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderLive(); }));
+  $$('#execMode button').forEach(b=>b.addEventListener('click',()=>{ RUN.mode=b.dataset.m; $$('#execMode button').forEach(x=>x.setAttribute('aria-pressed',x===b)); $('#nowFields').style.display=RUN.mode==='now'?'flex':'none'; $('#schedFields').style.display=RUN.mode==='sched'?'flex':'none'; $('#execNote').innerHTML=t(RUN.mode==='sched'?'execNoteSched':'execNoteNow');
+    if(RUN.mode==='sched'&&!$('#schedStart').value){ const d=new Date(Date.now()+5*60000); d.setSeconds(0); $('#schedStart').value=`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`; } }));
+  ['#escSec','#durH','#durM','#durS'].forEach(s=>$(s).addEventListener('input',persist));
+  $('#startAll').addEventListener('click',startAll); $('#stopAll').addEventListener('click',()=>stopAll(false));
+  $('#execTargets').addEventListener('change',renderExecStatus);
+  $('#refreshStor').addEventListener('click',()=>renderStorage(true));
+  $('#drawerToggle').addEventListener('click',()=>{ const o=$('#drawer').classList.toggle('open'); $('#drawerToggle').firstChild.textContent=o?'▼ ':'▲ '; });
+  $('#clearLog').addEventListener('click',()=>{ LOG.length=0; rerenderLog(); $('#logCount').textContent='0'; });
+  $('#closeModal').addEventListener('click',()=>$('#modal').classList.remove('open')); $('#modal').addEventListener('click',e=>{ if(e.target.id==='modal') $('#modal').classList.remove('open'); });
+  $('#copyFile').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText($('#modalBody').textContent); toast(t('copied')); }catch(e){ toast(t('copyFail')); } });
+  window.addEventListener('resize',()=>PAGE==='live'&&renderLive());
+  $('#liveRunBtn').addEventListener('click',toggleLiveRun);
+  $('#exportCsv').addEventListener('click',exportCsv);
+  $$('#thScale button').forEach(b=>b.addEventListener('click',()=>{ TH_SCALE=b.dataset.sc; $$('#thScale button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderLive(); }));
+  $$('#thSpan button').forEach(b=>{ b.setAttribute('aria-pressed',+b.dataset.s*1000===TH_SPAN); b.addEventListener('click',()=>{ TH_SPAN=+b.dataset.s*1000; $$('#thSpan button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderLive(); persist(); }); });
+  applyLang(); renderChips(); showPage('connect');
+  $('#appVer').textContent=APP_VERSION+' · client '+CLIENT_ID; $('#appVer2').textContent=APP_VERSION;
+  log(null,'·',`XL3 Trio Console ${APP_VERSION} ready — adapter: ${MODE==='sim'?'XL3Sim':'XL3Remote'} · client ${CLIENT_ID}`,'sys');
+  // open in a realistic working state: connect the simulated units on first visit
+  if(MODE==='sim'){ DEVICES.forEach((d,i)=>{ if(!d.key) d.key=`XL3-DEMO-${['A7K2','B3M9','C5R4'][i]}`; d.pass='1234'; }); renderConnect(); DEVICES.forEach(d=>d.connect()); }
+})();
+</script>
+</body></html>
